@@ -42,7 +42,7 @@ public class Event {
     @JoinColumn(name = "organizer_id")
     private User organizer;
 
-    @ManyToOne
+    @ManyToOne(optional = true)
     @JoinColumn(name = "team_id")
     private Team team;
 }
