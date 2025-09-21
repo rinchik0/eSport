@@ -29,6 +29,10 @@ public class User {
     private SystemRole role;
 
     private String name;
+    private String description;
+
+    @Column(nullable = false)
+    private String email;
 
     @Enumerated(EnumType.STRING)
     private TeamRole roleInTeam;
