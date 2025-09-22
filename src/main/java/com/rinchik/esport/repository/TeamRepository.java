@@ -13,6 +13,6 @@ public interface TeamRepository extends JpaRepository<Team, Long> {
     List<Team> findAll();
     List<Team> findByGame(Game game);
     Optional<Team> findById(Long id);
-    boolean existByName(String name);
-    boolean existByNameAndNotId(String name, Long id);
+    boolean existsByName(String name);
+    Optional<Team> findByName(String name);
 }

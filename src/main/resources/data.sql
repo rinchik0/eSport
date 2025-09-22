@@ -1,0 +1,9 @@
+DELETE FROM users;
+DELETE FROM teams;
+DELETE FROM events;
+DELETE FROM articles;
+DELETE FROM events_participants;
+ALTER SEQUENCE users_id_seq RESTART WITH 1;
+ALTER SEQUENCE events_id_seq RESTART WITH 1;
+ALTER SEQUENCE teams_id_seq RESTART WITH 1;
+ALTER SEQUENCE articles_id_seq RESTART WITH 1;

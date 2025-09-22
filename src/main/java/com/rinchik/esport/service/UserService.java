@@ -5,6 +5,7 @@ import com.rinchik.esport.dto.user.UserDetailsDto;
 import com.rinchik.esport.dto.user.UserRegistrationDto;
 import com.rinchik.esport.exception.InvalidPasswordException;
 import com.rinchik.esport.exception.LoginAlreadyTakenException;
+import com.rinchik.esport.exception.TeamNotFoundException;
 import com.rinchik.esport.exception.UserNotFoundException;
 import com.rinchik.esport.model.User;
 import com.rinchik.esport.model.enums.SystemRole;
@@ -24,7 +25,7 @@ public class UserService {
 
     @Transactional
     public User registerNewUser(UserRegistrationDto dto) {
-        if (userRepo.existByLogin(dto.getLogin())) {
+        if (userRepo.existsByLogin(dto.getLogin())) {
             throw new LoginAlreadyTakenException(dto.getLogin());
         }
 
@@ -44,20 +45,6 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException(id));
     }
 
-    public UserDetailsDto findUserDtoById(Long id) {
-        UserDetailsDto dto = new UserDetailsDto();
-        User user = userRepo.findById(id)
-                .orElseThrow(() -> new UserNotFoundException(id));
-        dto.setLogin(user.getLogin());
-        dto.setName(user.getName() != null ? user.getName() : null);
-        dto.setRole(user.getRole());
-        dto.setEmail(user.getEmail());
-        dto.setTeamName(user.getTeam() != null ? user.getTeam().getName() : null);
-        dto.setTeamRole(user.getRoleInTeam() != null ? user.getRoleInTeam() : null);
-        dto.setDescription(user.getDescription() != null ? user.getDescription() : null);
-        return dto;
-    }
-
     @Transactional
     public User updateUser(UserChangesDto dto) {
         User user = userRepo.findById(dto.getId())
@@ -65,7 +52,11 @@ public class UserService {
         user.setName(dto.getName());
         user.setDescription(dto.getDescription());
         user.setEmail(dto.getEmail());
-        if (!userRepo.existByLoginAndNotId(dto.getLogin(), dto.getId()))
+
+        if (!userRepo.existsByLogin(dto.getLogin()) ||
+                userRepo.existsByLogin(dto.getLogin()) &&
+                        (userRepo.findByLogin(dto.getLogin())
+                                .orElseThrow(() -> new UserNotFoundException(dto.getId())).getId() == dto.getId()))
             user.setLogin(dto.getLogin());
         else
             throw new LoginAlreadyTakenException(dto.getLogin());

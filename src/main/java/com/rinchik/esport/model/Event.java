@@ -1,6 +1,7 @@
 package com.rinchik.esport.model;
 
 import com.rinchik.esport.model.enums.EventType;
+import com.rinchik.esport.model.enums.Game;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -30,6 +31,8 @@ public class Event {
     @Column(nullable = false)
     private LocalDateTime date;
 
+    private Game game;
+
     @ManyToMany
     @JoinTable(
             name = "events_participants",
@@ -39,7 +42,7 @@ public class Event {
     private List<User> participants = new ArrayList<>();
 
     @ManyToOne
-    @JoinColumn(name = "organizer_id")
+    @JoinColumn(name = "organizer_id", nullable = false)
     private User organizer;
 
     @ManyToOne(optional = true)
