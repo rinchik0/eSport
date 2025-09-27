@@ -1,27 +1,51 @@
 package com.rinchik.esport.controller;
 
-import com.rinchik.esport.dto.user.UserRegistrationDto;
+import com.rinchik.esport.dto.user.LoginResponse;
+import com.rinchik.esport.dto.user.UserInfoResponse;
+import com.rinchik.esport.dto.user.UserLoginRequest;
+import com.rinchik.esport.dto.user.UserRegistrationRequest;
 import com.rinchik.esport.mapper.UserMapper;
 import com.rinchik.esport.model.User;
+import com.rinchik.esport.service.JwtTokenService;
 import com.rinchik.esport.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/auth")
 public class AuthController {
-    private final UserService service;
+    private final UserService userService;
+    private final JwtTokenService jwtService;
     private final UserMapper mapper;
 
     @PostMapping("/register")
-    public ResponseEntity<UserRegistrationDto> registerUser(@RequestBody UserRegistrationDto dto) {
-        User user = service.registerNewUser(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toUserRegistrationDto(user));
+    public ResponseEntity<LoginResponse> registerUser(@RequestBody UserRegistrationRequest dto) {
+        User user = userService.registerNewUser(dto);
+        String token = jwtService.generateToken(dto.getLogin());
+        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toLoginResponse(user, token));
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<?> loginUser(@RequestBody UserLoginRequest dto) {
+        if (userService.loginUser(dto)) {
+            User user = userService.findUserByLogin(dto.getLogin());
+            String token = jwtService.generateToken(dto.getLogin());
+            LoginResponse response = mapper.toLoginResponse(user, token);
+
+            return ResponseEntity.status(HttpStatus.OK).body(response);
+        } else {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Неверные учетные данные");
+        }
+    }
+
+    @GetMapping("/me")
+    public ResponseEntity<UserInfoResponse> getCurrentUser(@AuthenticationPrincipal UserDetails details) {
+        User user = userService.findUserByLogin(details.getUsername());
+        return ResponseEntity.ok(mapper.toUserInfoResponse(user));
     }
 }

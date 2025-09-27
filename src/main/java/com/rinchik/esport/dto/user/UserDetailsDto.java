@@ -7,8 +7,6 @@ import lombok.Data;
 
 @Data
 public class UserDetailsDto {
-    private String name;
-
     @NotBlank
     private String login;
 

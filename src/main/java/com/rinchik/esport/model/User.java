@@ -28,7 +28,6 @@ public class User {
     @Enumerated(EnumType.STRING)
     private SystemRole role;
 
-    private String name;
     private String description;
 
     @Column(nullable = false)

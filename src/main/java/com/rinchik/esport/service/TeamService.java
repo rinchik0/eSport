@@ -59,7 +59,7 @@ public class TeamService {
         List<User> members = team.getMembers();
         Map<String, TeamRole> membersWithRoles = new HashMap<>();
         for (var m : members)
-            membersWithRoles.put(m.getName(), m.getRoleInTeam());
+            membersWithRoles.put(m.getLogin(), m.getRoleInTeam());
         dto.setMembersWithRoles(membersWithRoles);
         return dto;
     }

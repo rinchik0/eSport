@@ -39,7 +39,7 @@ public class EventService {
             dto.setDescription(e.getDescription());
             dto.setType(e.getType());
             dto.setDate(e.getDate());
-            dto.setOrganizerName(e.getOrganizer().getName());
+            dto.setOrganizerName(e.getOrganizer().getLogin());
             dtos.add(dto);
         }
         return dtos;
@@ -62,11 +62,11 @@ public class EventService {
         dto.setDescription(event.getDescription());
         dto.setDate(event.getDate());
         dto.setType(event.getType());
-        dto.setOrganizerName(event.getOrganizer().getName());
+        dto.setOrganizerName(event.getOrganizer().getLogin());
         dto.setTeamName(event.getTeam().getName() != null ? event.getTeam().getName() : null);
         List<String> part = new ArrayList<>();
         for (var p : event.getParticipants())
-            part.add(p.getName());
+            part.add(p.getLogin());
         dto.setParticipantNames(part);
         return dto;
     }
