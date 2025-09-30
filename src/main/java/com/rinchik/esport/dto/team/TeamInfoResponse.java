@@ -7,7 +7,8 @@ import lombok.Data;
 import java.util.Map;
 
 @Data
-public class TeamInfoWithMembersDto {
+public class TeamInfoResponse {
+    private Long id;
     private String name;
     private String description;
     private Game game;

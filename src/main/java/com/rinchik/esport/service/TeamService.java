@@ -3,7 +3,7 @@ package com.rinchik.esport.service;
 import com.rinchik.esport.dto.team.TeamChangesDto;
 import com.rinchik.esport.dto.team.TeamCreatingDto;
 import com.rinchik.esport.dto.team.TeamDetailsDto;
-import com.rinchik.esport.dto.team.TeamInfoWithMembersDto;
+import com.rinchik.esport.dto.team.TeamInfoResponse;
 import com.rinchik.esport.exception.*;
 import com.rinchik.esport.model.Team;
 import com.rinchik.esport.model.User;
@@ -31,28 +31,22 @@ public class TeamService {
         return teamRepo.findAll();
     }
 
-    public List<TeamDetailsDto> findAllTeamsDto() {
-        List<Team> teams = teamRepo.findAll();
-        List<TeamDetailsDto> dtos = new ArrayList<>();
-        for (var t : teams) {
-            TeamDetailsDto dto = new TeamDetailsDto();
-            dto.setId(t.getId());
-            dto.setName(t.getName());
-            dto.setDescription(t.getDescription());
-            dto.setGame(t.getGame());
-            dtos.add(dto);
-        }
-        return dtos;
+    public Team findTeamByUser(User user) {
+        if (user.getTeam() == null)
+            throw new UserNotTeamMemberException(user.getId());
+
+        return teamRepo.findById(user.getTeam().getId())
+                .orElseThrow(() -> new TeamNotFoundException(user.getTeam().getId()));
     }
 
     public List<Team> findTeamsByGame(Game game) {
         return teamRepo.findByGame(game);
     }
 
-    public TeamInfoWithMembersDto findTeamById(Long id) {
+    public TeamInfoResponse findTeamById(Long id) {
         Team team = teamRepo.findById(id)
                 .orElseThrow(() -> new TeamNotFoundException(id));
-        TeamInfoWithMembersDto dto = new TeamInfoWithMembersDto();
+        TeamInfoResponse dto = new TeamInfoResponse();
         dto.setName(team.getName());
         dto.setDescription(team.getDescription());
         dto.setGame(team.getGame());

@@ -1,5 +1,6 @@
 package com.rinchik.esport.config;
 
+import com.rinchik.esport.service.CustomUserDetailsService;
 import com.rinchik.esport.service.JwtTokenService;
 import com.rinchik.esport.service.RoleService;
 import jakarta.servlet.FilterChain;
@@ -22,6 +23,7 @@ import java.util.List;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private final JwtTokenService jwtService;
     private final RoleService roleService;
+    private final CustomUserDetailsService detailsService;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -33,10 +35,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             String token = authHeader.substring(7);
 
             if (jwtService.validateToken(token)) {
-                String login = jwtService.getLoginFromToken(token);
-                List<GrantedAuthority> authorities = roleService.getAuthorities(login);
+                Long id = Long.valueOf(jwtService.getIdFromToken(token));
+                List<GrantedAuthority> authorities = roleService.getAuthorities(id);
 
-                UserDetails userDetails = createUserDetails(login, authorities);
+                UserDetails userDetails = detailsService.loadUserById(id);
 
                 UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(
@@ -48,17 +50,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
         }
         filterChain.doFilter(request, response);
-    }
-
-    private UserDetails createUserDetails(String login, List<GrantedAuthority> authorities) {
-        return org.springframework.security.core.userdetails.User.builder()
-                .username(login)
-                .password("") // Заглушка - пароль не нужен для JWT
-                .authorities(authorities)
-                .accountExpired(false)
-                .accountLocked(false)
-                .credentialsExpired(false)
-                .disabled(false)
-                .build();
     }
 }

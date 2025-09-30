@@ -4,4 +4,8 @@ public class UserNotTeamMemberException extends RuntimeException {
     public UserNotTeamMemberException(Long userId, Long teamId) {
         super("User with id " + userId + " is not member of team with id " + teamId);
     }
+
+    public UserNotTeamMemberException(Long userId) {
+        super("User with id " + userId + " is not member of any team");
+    }
 }

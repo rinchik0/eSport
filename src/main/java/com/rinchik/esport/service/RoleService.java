@@ -9,15 +9,18 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class RoleService {
     private final UserRepository userRepo;
 
-    public List<GrantedAuthority> getAuthorities(String login) {
-        User user = userRepo.findByLogin(login)
-                .orElseThrow(() -> new UserNotFoundException());
-        return List.of(new SimpleGrantedAuthority(user.getRole().name()));
+    public List<GrantedAuthority> getAuthorities(Long id) {
+        User user = userRepo.findById(id)
+                .orElseThrow(() -> new UserNotFoundException(id));
+        return user.getRoles().stream()
+                .map(role -> new SimpleGrantedAuthority(role.name()))
+                .collect(Collectors.toList());
     }
 }

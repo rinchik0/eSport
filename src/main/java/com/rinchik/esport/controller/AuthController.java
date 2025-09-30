@@ -4,6 +4,9 @@ import com.rinchik.esport.dto.user.LoginResponse;
 import com.rinchik.esport.dto.user.UserInfoResponse;
 import com.rinchik.esport.dto.user.UserLoginRequest;
 import com.rinchik.esport.dto.user.UserRegistrationRequest;
+import com.rinchik.esport.exception.InvalidPasswordException;
+import com.rinchik.esport.exception.LoginAlreadyTakenException;
+import com.rinchik.esport.exception.UserNotFoundException;
 import com.rinchik.esport.mapper.UserMapper;
 import com.rinchik.esport.model.User;
 import com.rinchik.esport.service.JwtTokenService;
@@ -24,22 +27,26 @@ public class AuthController {
     private final UserMapper mapper;
 
     @PostMapping("/register")
-    public ResponseEntity<LoginResponse> registerUser(@RequestBody UserRegistrationRequest dto) {
-        User user = userService.registerNewUser(dto);
-        String token = jwtService.generateToken(dto.getLogin());
-        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toLoginResponse(user, token));
+    public ResponseEntity<?> registerUser(@RequestBody UserRegistrationRequest dto) {
+        try {
+            User user = userService.registerNewUser(dto);
+            String token = jwtService.generateToken(user.getId());
+            return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toLoginResponse(user, token));
+        } catch (LoginAlreadyTakenException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        }
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> loginUser(@RequestBody UserLoginRequest dto) {
-        if (userService.loginUser(dto)) {
-            User user = userService.findUserByLogin(dto.getLogin());
-            String token = jwtService.generateToken(dto.getLogin());
+        try {
+            User user = userService.loginUser(dto);
+            String token = jwtService.generateToken(user.getId());
             LoginResponse response = mapper.toLoginResponse(user, token);
 
             return ResponseEntity.status(HttpStatus.OK).body(response);
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Неверные учетные данные");
+        } catch(UserNotFoundException | InvalidPasswordException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(e.getMessage());
         }
     }
 

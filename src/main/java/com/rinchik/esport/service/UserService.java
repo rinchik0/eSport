@@ -1,6 +1,6 @@
 package com.rinchik.esport.service;
 
-import com.rinchik.esport.dto.user.UserChangesDto;
+import com.rinchik.esport.dto.user.UserChangesRequest;
 import com.rinchik.esport.dto.user.UserLoginRequest;
 import com.rinchik.esport.dto.user.UserRegistrationRequest;
 import com.rinchik.esport.exception.InvalidPasswordException;
@@ -11,13 +11,11 @@ import com.rinchik.esport.model.enums.SystemRole;
 import com.rinchik.esport.model.enums.TeamRole;
 import com.rinchik.esport.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -38,15 +36,20 @@ public class UserService {
 
         newUser.setPassword(encoder.encode(dto.getPassword()));
 
-        newUser.setRole(SystemRole.ROLE_GUEST);
+        newUser.getRoles().add(SystemRole.ROLE_GUEST);
 
         return userRepo.save(newUser);
     }
 
-    public boolean loginUser(UserLoginRequest dto) {
-        return userRepo.findByLogin(dto.getLogin())
-                .map(user -> encoder.matches(dto.getPassword(), user.getPassword()))
-                .orElse(false);
+    public User loginUser(UserLoginRequest dto) {
+        User user = userRepo.findByLogin(dto.getLogin())
+                .orElseThrow(() -> new UserNotFoundException(dto.getLogin()));
+
+        if (!encoder.matches(dto.getPassword(), user.getPassword())) {
+            throw new InvalidPasswordException();
+        }
+
+        return user;
     }
 
     public User findUserById(Long id) {
@@ -56,7 +59,7 @@ public class UserService {
 
     public User findUserByLogin(String login) {
         return userRepo.findByLogin(login)
-                .orElseThrow(() -> new UserNotFoundException());
+                .orElseThrow(() -> new UserNotFoundException(login));
     }
 
     public List<User> findAllUsers() {
@@ -64,19 +67,26 @@ public class UserService {
     }
 
     @Transactional
-    public User updateUser(UserChangesDto dto) {
-        User user = userRepo.findById(dto.getId())
-                .orElseThrow(() -> new UserNotFoundException(dto.getId()));
-        user.setDescription(dto.getDescription());
-        user.setEmail(dto.getEmail());
+    public User updateUser(Long id, UserChangesRequest dto) {
+        User user = userRepo.findById(id)
+                .orElseThrow(() -> new UserNotFoundException(id));
 
-        if (!userRepo.existsByLogin(dto.getLogin()) ||
-                userRepo.existsByLogin(dto.getLogin()) &&
-                        (userRepo.findByLogin(dto.getLogin())
-                                .orElseThrow(() -> new UserNotFoundException(dto.getId())).getId() == dto.getId()))
-            user.setLogin(dto.getLogin());
-        else
-            throw new LoginAlreadyTakenException(dto.getLogin());
+        if (!dto.getDescription().equals(""))
+            user.setDescription(dto.getDescription());
+
+        if (!dto.getEmail().equals(""))
+            user.setEmail(dto.getEmail());
+
+        if (!dto.getLogin().equals("")) {
+            if (!userRepo.existsByLogin(dto.getLogin()) ||
+                    userRepo.existsByLogin(dto.getLogin()) &&
+                            (userRepo.findByLogin(dto.getLogin())
+                                    .orElseThrow(() -> new UserNotFoundException(id))
+                                    .getId().equals(id)))
+                user.setLogin(dto.getLogin());
+            else
+                throw new LoginAlreadyTakenException(dto.getLogin());
+        }
         return user;
     }
 
@@ -91,10 +101,18 @@ public class UserService {
     }
 
     @Transactional
-    public User changeSystemRole(Long id, SystemRole newRole) {
+    public User addSystemRole(Long id, SystemRole newRole) {
         User user = userRepo.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
-        user.setRole(newRole);
+        user.getRoles().add(newRole);
+        return user;
+    }
+
+    @Transactional
+    public User deleteSystemRole(Long id, SystemRole newRole) {
+        User user = userRepo.findById(id)
+                .orElseThrow(() -> new UserNotFoundException(id));
+        user.getRoles().remove(newRole);
         return user;
     }
 
@@ -107,11 +125,11 @@ public class UserService {
         return user;
     }
 
-    public UserDetails toUserDetails(User user) {
-        return org.springframework.security.core.userdetails.User
-                .withUsername(user.getLogin())
-                .password(user.getPassword())
-                .authorities(user.getRole().name())
-                .build();
-    }
+//    public UserDetails toUserDetails(User user) {
+//        return org.springframework.security.core.userdetails.User
+//                .withUsername(user.getLogin())
+//                .password(user.getPassword())
+//                .authorities(user.getRole().name())
+//                .build();
+//    }
 }

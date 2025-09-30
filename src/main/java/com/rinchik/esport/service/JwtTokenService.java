@@ -14,19 +14,19 @@ public class JwtTokenService {
     private final SecretKey key = Keys.secretKeyFor(SignatureAlgorithm.HS256);
     private final long validityInMillis = 3600000; // 1 hour
 
-    public String generateToken(String username) {
+    public String generateToken(Long id) {
         Date now = new Date();
         Date validity = new Date(now.getTime() + validityInMillis);
 
         return Jwts.builder()
-                .subject(username)
+                .subject(String.valueOf(id))
                 .issuedAt(now)
                 .expiration(validity)
                 .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
-    public String getLoginFromToken(String token) {
+    public String getIdFromToken(String token) {
         try {
             return Jwts.parser()
                     .verifyWith(key)

@@ -4,11 +4,13 @@ import com.rinchik.esport.model.enums.SystemRole;
 import com.rinchik.esport.model.enums.TeamRole;
 import lombok.Data;
 
+import java.util.Set;
+
 @Data
 public class UserInfoResponse {
     private Long id;
     private String login;
-    private SystemRole role;
+    private Set<SystemRole> roles;
     private String email;
     private String description;
     private String teamName;

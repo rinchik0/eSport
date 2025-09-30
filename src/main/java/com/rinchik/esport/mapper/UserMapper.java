@@ -1,7 +1,6 @@
 package com.rinchik.esport.mapper;
 
 import com.rinchik.esport.dto.user.LoginResponse;
-import com.rinchik.esport.dto.user.UserDetailsDto;
 import com.rinchik.esport.dto.user.UserInfoResponse;
 import com.rinchik.esport.dto.user.UserRegistrationRequest;
 import com.rinchik.esport.model.User;
@@ -21,7 +20,7 @@ public class UserMapper {
         UserInfoResponse dto = new UserInfoResponse();
         dto.setId(user.getId());
         dto.setDescription(user.getDescription());
-        dto.setRole(user.getRole());
+        dto.setRoles(user.getRoles());
         dto.setEmail(user.getEmail());
         if (user.getTeam() != null) {
             dto.setTeamId(user.getTeam().getId());
@@ -41,17 +40,6 @@ public class UserMapper {
         LoginResponse dto = new LoginResponse();
         dto.setUser(info);
         dto.setToken(token);
-        return dto;
-    }
-
-    public UserDetailsDto userDetailsDto(User user) {
-        UserDetailsDto dto = new UserDetailsDto();
-        dto.setLogin(user.getLogin());
-        dto.setRole(user.getRole());
-        dto.setEmail(user.getEmail());
-        dto.setTeamName(user.getTeam() != null ? user.getTeam().getName() : null);
-        dto.setTeamRole(user.getRoleInTeam() != null ? user.getRoleInTeam() : null);
-        dto.setDescription(user.getDescription() != null ? user.getDescription() : null);
         return dto;
     }
 }
