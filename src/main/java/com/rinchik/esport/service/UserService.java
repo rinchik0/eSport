@@ -6,6 +6,7 @@ import com.rinchik.esport.dto.user.UserRegistrationRequest;
 import com.rinchik.esport.exception.InvalidPasswordException;
 import com.rinchik.esport.exception.LoginAlreadyTakenException;
 import com.rinchik.esport.exception.UserNotFoundException;
+import com.rinchik.esport.exception.UserNotTeamMemberException;
 import com.rinchik.esport.model.User;
 import com.rinchik.esport.model.enums.SystemRole;
 import com.rinchik.esport.model.enums.TeamRole;
@@ -36,6 +37,8 @@ public class UserService {
 
         newUser.setPassword(encoder.encode(dto.getPassword()));
 
+
+        // Роль почему-то не добавляется. Разобраться!
         newUser.getRoles().add(SystemRole.ROLE_GUEST);
 
         return userRepo.save(newUser);
@@ -125,11 +128,11 @@ public class UserService {
         return user;
     }
 
-//    public UserDetails toUserDetails(User user) {
-//        return org.springframework.security.core.userdetails.User
-//                .withUsername(user.getLogin())
-//                .password(user.getPassword())
-//                .authorities(user.getRole().name())
-//                .build();
-//    }
+    @Transactional
+    public void deleteUser(Long id) {
+        if (userRepo.existsById(id))
+            userRepo.deleteById(id);
+        else
+            throw new UserNotFoundException(id);
+    }
 }

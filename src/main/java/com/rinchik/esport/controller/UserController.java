@@ -8,6 +8,7 @@ import com.rinchik.esport.exception.LoginAlreadyTakenException;
 import com.rinchik.esport.exception.UserNotFoundException;
 import com.rinchik.esport.mapper.UserMapper;
 import com.rinchik.esport.model.User;
+import com.rinchik.esport.model.enums.SystemRole;
 import com.rinchik.esport.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -68,6 +69,39 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.OK).body("Successfully changed");
         } catch (InvalidPasswordException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/make_admin")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<String> makeUserAdmin(@RequestBody Long userId) {
+        try {
+            service.addSystemRole(userId, SystemRole.ROLE_ADMIN);
+            return ResponseEntity.status(HttpStatus.OK).body("Successfully gave role ADMIN");
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/unmake_admin")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<String> unmakeUserAdmin(@RequestBody Long userId) {
+        try {
+            service.deleteSystemRole(userId, SystemRole.ROLE_ADMIN);
+            return ResponseEntity.status(HttpStatus.OK).body("Successfully cancelled role ADMIN");
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/delete_user")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
+    public ResponseEntity<String> deleteUser(@RequestBody Long userId) {
+        try {
+            service.deleteUser(userId);
+            return ResponseEntity.status(HttpStatus.OK).body("Successfully deleted");
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
         }
     }
 }
