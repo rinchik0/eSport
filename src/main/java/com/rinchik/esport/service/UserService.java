@@ -16,6 +16,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 
 @Service
@@ -37,9 +39,7 @@ public class UserService {
 
         newUser.setPassword(encoder.encode(dto.getPassword()));
 
-
-        // Роль почему-то не добавляется. Разобраться!
-        newUser.getRoles().add(SystemRole.ROLE_GUEST);
+        newUser.setRoles(new HashSet<>(Arrays.asList(SystemRole.ROLE_GUEST)));
 
         return userRepo.save(newUser);
     }
@@ -118,6 +118,11 @@ public class UserService {
         user.getRoles().remove(newRole);
         return user;
     }
+
+//    @Transactional
+//    public void addTeamToUser(Long userId, Long teamId) {
+//        User user = userRepo.findById(userId);
+//    }
 
     @Transactional
     public User changeTeamRole(Long id, TeamRole newRole) {

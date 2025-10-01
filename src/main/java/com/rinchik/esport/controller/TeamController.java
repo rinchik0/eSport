@@ -1,5 +1,6 @@
 package com.rinchik.esport.controller;
 
+import com.rinchik.esport.dto.team.TeamCreatingRequest;
 import com.rinchik.esport.dto.team.TeamInfoResponse;
 import com.rinchik.esport.exception.TeamNotFoundException;
 import com.rinchik.esport.exception.UserNotFoundException;
@@ -51,5 +52,12 @@ public class TeamController {
     }
 
 //    @PostMapping("/create_new")
-//    public ResponseEntity<?> createNewTeam(@RequestBody TeamCreatingRequest dto)
+//    public ResponseEntity<?> createNewTeam(@AuthenticationPrincipal UserDetails details,
+//                                           @RequestBody TeamCreatingRequest dto) {
+//        try {
+//            Team team = teamService.createNewTeam(dto);
+//            User user = userService.findUserByLogin(details.getUsername());
+//
+//        } catch (UserNotFoundException | ) {}
+//    }
 }

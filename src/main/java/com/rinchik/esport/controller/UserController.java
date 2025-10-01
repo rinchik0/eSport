@@ -74,7 +74,7 @@ public class UserController {
 
     @PostMapping("/make_admin")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<String> makeUserAdmin(@RequestBody Long userId) {
+    public ResponseEntity<String> makeUserAdmin(@RequestParam Long userId) {
         try {
             service.addSystemRole(userId, SystemRole.ROLE_ADMIN);
             return ResponseEntity.status(HttpStatus.OK).body("Successfully gave role ADMIN");
@@ -85,7 +85,7 @@ public class UserController {
 
     @PostMapping("/unmake_admin")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<String> unmakeUserAdmin(@RequestBody Long userId) {
+    public ResponseEntity<String> unmakeUserAdmin(@RequestParam Long userId) {
         try {
             service.deleteSystemRole(userId, SystemRole.ROLE_ADMIN);
             return ResponseEntity.status(HttpStatus.OK).body("Successfully cancelled role ADMIN");
@@ -96,7 +96,7 @@ public class UserController {
 
     @PostMapping("/delete_user")
     @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<String> deleteUser(@RequestBody Long userId) {
+    public ResponseEntity<String> deleteUser(@RequestParam Long userId) {
         try {
             service.deleteUser(userId);
             return ResponseEntity.status(HttpStatus.OK).body("Successfully deleted");

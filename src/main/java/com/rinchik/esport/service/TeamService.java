@@ -1,8 +1,7 @@
 package com.rinchik.esport.service;
 
 import com.rinchik.esport.dto.team.TeamChangesDto;
-import com.rinchik.esport.dto.team.TeamCreatingDto;
-import com.rinchik.esport.dto.team.TeamDetailsDto;
+import com.rinchik.esport.dto.team.TeamCreatingRequest;
 import com.rinchik.esport.dto.team.TeamInfoResponse;
 import com.rinchik.esport.exception.*;
 import com.rinchik.esport.model.Team;
@@ -25,7 +24,7 @@ import java.util.Map;
 @Transactional(readOnly = true)
 public class TeamService {
     private final TeamRepository teamRepo;
-    private final UserRepository userRepo;
+    private final UserService userService;
 
     public List<Team> findAllTeams() {
         return teamRepo.findAll();
@@ -59,7 +58,7 @@ public class TeamService {
     }
 
     @Transactional
-    public Team createNewTeam(TeamCreatingDto dto) {
+    public Team createNewTeam(TeamCreatingRequest dto) {
         if (teamRepo.existsByName(dto.getName()))
             throw new TeamNameAlreadyTakenException(dto.getName());
 
@@ -94,35 +93,38 @@ public class TeamService {
         return team.getMembers();
     }
 
-    @Transactional
-    public void addMemberToTeam(Long teamId, Long userId, TeamRole role) {
-        Team team = teamRepo.findById(teamId)
-                .orElseThrow(() -> new TeamNotFoundException(teamId));
-        User user = userRepo.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
+//    @Transactional
+//    public void addMemberToTeam(Long teamId, Long userId, TeamRole role) {
+//        try {
+//            Team team = teamRepo.findById(teamId)
+//                    .orElseThrow(() -> new TeamNotFoundException(teamId));
+//            User user = userService.findUserById(userId);
+//
+//            if (team.getMembers().contains(user))
+//                throw new UserAlreadyTeamMemberException(userId, teamId);
+//
+//            team.getMembers().add(user);
+//            user.setTeam(team);
+//            user.setRoleInTeam(role);
+//        } catch (UserNotFoundException e) {
+//
+//        }
+//    }
 
-        if (team.getMembers().contains(user))
-            throw new UserAlreadyTeamMemberException(userId, teamId);
-
-        team.getMembers().add(user);
-        user.setTeam(team);
-        user.setRoleInTeam(role);
-    }
-
-    @Transactional
-    public void deleteMemberFromTeam(Long teamId, Long userId) {
-        Team team = teamRepo.findById(teamId)
-                .orElseThrow(() -> new TeamNotFoundException(teamId));
-        User user = userRepo.findById(userId)
-                .orElseThrow(() -> new UserNotFoundException(userId));
-
-        if (!team.getMembers().contains(user))
-            throw new UserNotTeamMemberException(userId, teamId);
-
-        team.getMembers().remove(user);
-        user.setTeam(null);
-        user.setRoleInTeam(null);
-    }
+//    @Transactional
+//    public void deleteMemberFromTeam(Long teamId, Long userId) {
+//        Team team = teamRepo.findById(teamId)
+//                .orElseThrow(() -> new TeamNotFoundException(teamId));
+//        User user = userRepo.findById(userId)
+//                .orElseThrow(() -> new UserNotFoundException(userId));
+//
+//        if (!team.getMembers().contains(user))
+//            throw new UserNotTeamMemberException(userId, teamId);
+//
+//        team.getMembers().remove(user);
+//        user.setTeam(null);
+//        user.setRoleInTeam(null);
+//    }
 
     @Transactional
     public void deleteTeam(Long id) {

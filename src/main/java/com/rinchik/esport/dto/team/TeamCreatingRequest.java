@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-public class TeamCreatingDto {
+public class TeamCreatingRequest {
     @NotBlank
     private String name;
 
