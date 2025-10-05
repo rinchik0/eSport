@@ -6,7 +6,6 @@ import com.rinchik.esport.dto.user.UserRegistrationRequest;
 import com.rinchik.esport.exception.InvalidPasswordException;
 import com.rinchik.esport.exception.LoginAlreadyTakenException;
 import com.rinchik.esport.exception.UserNotFoundException;
-import com.rinchik.esport.exception.UserNotTeamMemberException;
 import com.rinchik.esport.model.User;
 import com.rinchik.esport.model.enums.SystemRole;
 import com.rinchik.esport.model.enums.TeamRole;
@@ -112,17 +111,13 @@ public class UserService {
     }
 
     @Transactional
-    public User deleteSystemRole(Long id, SystemRole newRole) {
+    public User deleteSystemRole(Long id, SystemRole role) {
         User user = userRepo.findById(id)
                 .orElseThrow(() -> new UserNotFoundException(id));
-        user.getRoles().remove(newRole);
+        if (user.getRoles().contains(role))
+            user.getRoles().remove(role);
         return user;
     }
-
-//    @Transactional
-//    public void addTeamToUser(Long userId, Long teamId) {
-//        User user = userRepo.findById(userId);
-//    }
 
     @Transactional
     public User changeTeamRole(Long id, TeamRole newRole) {

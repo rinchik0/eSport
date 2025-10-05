@@ -2,19 +2,11 @@ package com.rinchik.esport.mapper;
 
 import com.rinchik.esport.dto.user.LoginResponse;
 import com.rinchik.esport.dto.user.UserInfoResponse;
-import com.rinchik.esport.dto.user.UserRegistrationRequest;
 import com.rinchik.esport.model.User;
 import org.springframework.stereotype.Component;
 
 @Component
 public class UserMapper {
-    public UserRegistrationRequest toUserRegistrationResponse(User user) {
-        UserRegistrationRequest dto = new UserRegistrationRequest();
-        dto.setLogin(user.getLogin());
-        dto.setEmail(user.getEmail());
-        dto.setPassword(user.getPassword());
-        return dto;
-    }
 
     public UserInfoResponse toUserInfoResponse(User user) {
         UserInfoResponse dto = new UserInfoResponse();

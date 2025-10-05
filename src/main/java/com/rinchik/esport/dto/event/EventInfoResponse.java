@@ -4,13 +4,15 @@ import com.rinchik.esport.model.enums.EventType;
 import lombok.Data;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
-public class EventCreatingDto {
+public class EventInfoResponse {
     private String name;
     private String description;
     private EventType type;
     private LocalDateTime date;
-    private Long organizerId;
-    private Long teamId;
+    private String organizerName;
+    private List<String> participantNames;
+    private String teamName;
 }
