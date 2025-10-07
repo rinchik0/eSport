@@ -3,14 +3,13 @@ package com.rinchik.esport.service;
 import com.rinchik.esport.dto.user.UserChangesRequest;
 import com.rinchik.esport.dto.user.UserLoginRequest;
 import com.rinchik.esport.dto.user.UserRegistrationRequest;
-import com.rinchik.esport.exception.InvalidPasswordException;
-import com.rinchik.esport.exception.LoginAlreadyTakenException;
-import com.rinchik.esport.exception.UserNotFoundException;
+import com.rinchik.esport.exception.*;
 import com.rinchik.esport.model.User;
 import com.rinchik.esport.model.enums.SystemRole;
 import com.rinchik.esport.model.enums.TeamRole;
 import com.rinchik.esport.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,6 +24,7 @@ import java.util.List;
 public class UserService {
     private final UserRepository userRepo;
     private final PasswordEncoder encoder;
+    private final RoleService roleService;
 
     @Transactional
     public User registerNewUser(UserRegistrationRequest dto) {
@@ -43,9 +43,13 @@ public class UserService {
         return userRepo.save(newUser);
     }
 
+    public User findUserByLogin(String login) {
+        return userRepo.findByLogin(login)
+                .orElseThrow(() -> new UserNotFoundException(login));
+    }
+
     public User loginUser(UserLoginRequest dto) {
-        User user = userRepo.findByLogin(dto.getLogin())
-                .orElseThrow(() -> new UserNotFoundException(dto.getLogin()));
+        User user = findUserByLogin(dto.getLogin());
 
         if (!encoder.matches(dto.getPassword(), user.getPassword())) {
             throw new InvalidPasswordException();
@@ -59,19 +63,13 @@ public class UserService {
                 .orElseThrow(() -> new UserNotFoundException(id));
     }
 
-    public User findUserByLogin(String login) {
-        return userRepo.findByLogin(login)
-                .orElseThrow(() -> new UserNotFoundException(login));
-    }
-
     public List<User> findAllUsers() {
         return userRepo.findAll();
     }
 
     @Transactional
     public User updateUser(Long id, UserChangesRequest dto) {
-        User user = userRepo.findById(id)
-                .orElseThrow(() -> new UserNotFoundException(id));
+        User user = findUserById(id);
 
         if (!dto.getDescription().equals(""))
             user.setDescription(dto.getDescription());
@@ -94,8 +92,7 @@ public class UserService {
 
     @Transactional
     public void changePassword(Long id, String oldPass, String newPass) {
-        User user = userRepo.findById(id)
-                .orElseThrow(() -> new UserNotFoundException(id));
+        User user = findUserById(id);
         if (encoder.matches(oldPass, user.getPassword()))
             user.setPassword(encoder.encode(newPass));
         else
@@ -104,28 +101,39 @@ public class UserService {
 
     @Transactional
     public User addSystemRole(Long id, SystemRole newRole) {
-        User user = userRepo.findById(id)
-                .orElseThrow(() -> new UserNotFoundException(id));
+        User user = findUserById(id);
         user.getRoles().add(newRole);
         return user;
     }
 
     @Transactional
-    public User deleteSystemRole(Long id, SystemRole role) {
-        User user = userRepo.findById(id)
-                .orElseThrow(() -> new UserNotFoundException(id));
+    public User deleteSystemRole(Long userId, SystemRole role) {
+        User user = findUserById(userId);
         if (user.getRoles().contains(role))
             user.getRoles().remove(role);
         return user;
     }
 
+    public boolean isFromOneTeam(Long userId1, Long userId2) {
+        return findUserById(userId1).getTeam().equals(findUserById(userId2).getTeam());
+    }
+
     @Transactional
-    public User changeTeamRole(Long id, TeamRole newRole) {
-        User user = userRepo.findById(id)
-                .orElseThrow(() -> new UserNotFoundException(id));
+    public void changeTeamRole(Long id, TeamRole newRole) {
+        User user = findUserById(id);
         if (user.getTeam() != null)
             user.setRoleInTeam(newRole);
-        return user;
+    }
+
+    @Transactional
+    public void changeTeamRoleByCaptain(Long userId, TeamRole newRole, Long captainId) {
+        if (isFromOneTeam(userId, captainId))
+            if (roleService.doesRoleMatchGame(newRole, findUserById(captainId).getTeam().getGame()))
+                changeTeamRole(userId, newRole);
+            else
+                throw new RoleNotMatchesGameException(newRole, findUserById(captainId).getTeam().getGame());
+        else
+            throw new NotCaptainOfTeamException(captainId, findUserById(userId).getTeam().getId());
     }
 
     @Transactional
@@ -134,5 +142,9 @@ public class UserService {
             userRepo.deleteById(id);
         else
             throw new UserNotFoundException(id);
+    }
+
+    public User getCurrentUser(UserDetails details) {
+        return findUserByLogin(details.getUsername());
     }
 }

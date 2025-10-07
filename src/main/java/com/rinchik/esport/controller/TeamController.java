@@ -3,7 +3,6 @@ package com.rinchik.esport.controller;
 import com.rinchik.esport.dto.team.TeamChangesRequest;
 import com.rinchik.esport.dto.team.TeamCreatingRequest;
 import com.rinchik.esport.dto.team.TeamInfoResponse;
-import com.rinchik.esport.exception.*;
 import com.rinchik.esport.mapper.TeamMapper;
 import com.rinchik.esport.model.Team;
 import com.rinchik.esport.model.User;
@@ -12,6 +11,7 @@ import com.rinchik.esport.model.enums.SystemRole;
 import com.rinchik.esport.model.enums.TeamRole;
 import com.rinchik.esport.service.TeamService;
 import com.rinchik.esport.service.UserService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -33,15 +33,11 @@ public class TeamController {
 
     @GetMapping("/my_team")
     @PreAuthorize("hasRole('ROLE_PLAYER')")
-    public ResponseEntity<?> getTeamByUser(@AuthenticationPrincipal UserDetails details) {
-        try {
-            User user = userService.findUserByLogin(details.getUsername());
-            Team team = teamService.findTeamByUser(user);
-            TeamInfoResponse dto = mapper.toTeamInfoResponse(team);
-            return ResponseEntity.status(HttpStatus.OK).body(dto);
-        } catch (UserNotFoundException | UserNotTeamMemberException | TeamNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+    public ResponseEntity<TeamInfoResponse> getTeamByUser(@AuthenticationPrincipal UserDetails details) {
+        User user = userService.getCurrentUser(details);
+        Team team = teamService.findTeamByUser(user);
+        TeamInfoResponse dto = mapper.toTeamInfoResponse(team);
+        return ResponseEntity.status(HttpStatus.OK).body(dto);
     }
 
     @GetMapping("/all")
@@ -53,123 +49,81 @@ public class TeamController {
         return ResponseEntity.status(HttpStatus.OK).body(dtos);
     }
 
-    @PostMapping("/create_new")
+    @PostMapping("/new")
     @PreAuthorize("!hasAnyRole('ROLE_CAPTAIN', 'ROLE_PLAYER')")
-    public ResponseEntity<?> createNewTeam(@AuthenticationPrincipal UserDetails details,
-                                           @RequestBody TeamCreatingRequest dto) {
-        try {
-            Team team = teamService.createNewTeam(dto);
-            User user = userService.findUserByLogin(details.getUsername());
-            user = userService.addSystemRole(user.getId(), SystemRole.ROLE_CAPTAIN);
-            user = userService.addSystemRole(user.getId(), SystemRole.ROLE_PLAYER);
-            teamService.addMemberToTeam(team.getId(), user.getId());
-            return ResponseEntity.status(HttpStatus.OK).body(mapper.toTeamInfoResponse(team));
-        } catch (UserNotFoundException | TeamNameAlreadyTakenException | TeamNotFoundException |
-                 UserAlreadyTeamMemberException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        }
+    public ResponseEntity<TeamInfoResponse> createNewTeam(@AuthenticationPrincipal UserDetails details,
+                                                          @Valid @RequestBody TeamCreatingRequest dto) {
+        Team team = teamService.createNewTeam(dto);
+        User user = userService.getCurrentUser(details);
+        user = userService.addSystemRole(user.getId(), SystemRole.ROLE_CAPTAIN);
+        user = userService.addSystemRole(user.getId(), SystemRole.ROLE_PLAYER);
+        teamService.addMemberToTeam(team.getId(), user.getId());
+        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toTeamInfoResponse(team));
     }
 
-    @PostMapping("/change_team")
+    @PutMapping("/my_team")
     @PreAuthorize("hasRole('ROLE_CAPTAIN')")
-    public ResponseEntity<?> updateTeam(@AuthenticationPrincipal UserDetails details,
-                                        @RequestBody TeamChangesRequest dto) {
-        try {
-            Team team = teamService.updateTeam(userService.findUserByLogin(details.getUsername()).getTeam().getId(), dto);
-            return ResponseEntity.status(HttpStatus.OK).body(mapper.toTeamInfoResponse(team));
-        } catch (TeamNameAlreadyTakenException | TeamNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        }
+    public ResponseEntity<TeamInfoResponse> updateTeam(@AuthenticationPrincipal UserDetails details,
+                                                       @Valid @RequestBody TeamChangesRequest dto) {
+        Team team = teamService.updateTeam(userService.getCurrentUser(details).getTeam().getId(), dto);
+        return ResponseEntity.status(HttpStatus.OK).body(mapper.toTeamInfoResponse(team));
     }
 
-    @PostMapping("/add_member")
+    @PostMapping("/members/{userId}")
     @PreAuthorize("hasRole('ROLE_CAPTAIN')")
-    public ResponseEntity<String> addMemberToTeam(@AuthenticationPrincipal UserDetails details,
-                                                  @RequestParam Long userId) {
-        try {
-            teamService.addMemberToTeam(userService.findUserByLogin(details.getUsername()).getTeam().getId(), userId);
-            userService.addSystemRole(userId, SystemRole.ROLE_PLAYER);
-            return ResponseEntity.status(HttpStatus.OK).body("Successfully added");
-        } catch (UserAlreadyTeamMemberException | UserNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        }
+    public ResponseEntity<Void> addMemberToTeam(@AuthenticationPrincipal UserDetails details,
+                                                @PathVariable Long userId) {
+        teamService.addMemberToTeam(userService.getCurrentUser(details).getTeam().getId(), userId);
+        userService.addSystemRole(userId, SystemRole.ROLE_PLAYER);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @PostMapping("/change_teamrole")
+    @PutMapping("/members/{userId}/role")
     @PreAuthorize("hasRole('ROLE_CAPTAIN')")
-    public ResponseEntity<String> changeMemberTeamRole(@AuthenticationPrincipal UserDetails details,
-                                                       @RequestParam Long userId, @RequestParam TeamRole role) {
-        try {
-            if (userService.findUserById(userId).getTeam().equals(userService.findUserByLogin(details.getUsername()).getTeam())) {
-                userService.changeTeamRole(userId, role);
-                return ResponseEntity.status(HttpStatus.OK).body("Successfully changed");
-            } else
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Not allowed");
-        } catch (UserNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
+    public ResponseEntity<Void> changeMemberTeamRole(@AuthenticationPrincipal UserDetails details,
+                                                     @PathVariable Long userId,
+                                                     @RequestParam TeamRole role) {
+        userService.changeTeamRoleByCaptain(userId, role, userService.getCurrentUser(details).getId());
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
-    @PostMapping("/delete_member")
+    @DeleteMapping("/members/{userId}")
     @PreAuthorize("hasRole('ROLE_CAPTAIN')")
-    public ResponseEntity<String> deleteMemberFromTeam(@AuthenticationPrincipal UserDetails details,
-                                                       @RequestParam Long userId) {
-        try {
-            if (userService.findUserById(userId).getTeam().equals(userService.findUserByLogin(details.getUsername()).getTeam())) {
-                teamService.deleteMemberFromTeam(userService.findUserByLogin(details.getUsername()).getTeam().getId(), userId);
-                userService.deleteSystemRole(userId, SystemRole.ROLE_PLAYER);
-                return ResponseEntity.status(HttpStatus.OK).body("Successfully deleted");
-            } else
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Not allowed");
-        } catch (TeamNotFoundException | UserNotTeamMemberException | UserNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        }
+    public ResponseEntity<Void> deleteMemberFromTeam(@AuthenticationPrincipal UserDetails details,
+                                                     @PathVariable Long userId) {
+        teamService.deleteMemberFromTeamByCaptain(userService.getCurrentUser(details).getTeam().getId(),
+                userId, userService.findUserByLogin(details.getUsername()).getId());
+        userService.deleteSystemRole(userId, SystemRole.ROLE_PLAYER);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
-    @PostMapping("/delete_team")
+    @DeleteMapping("/my_team")
     @PreAuthorize("hasRole('ROLE_CAPTAIN')")
-    public ResponseEntity<String> deleteTeam(@AuthenticationPrincipal UserDetails details) {
-        try {
-            for (var u : teamService.findMembersByTeam(userService.findUserByLogin(details.getUsername()).getTeam().getId()))
-                userService.deleteSystemRole(u.getId(), SystemRole.ROLE_PLAYER);
-            teamService.deleteTeam(userService.findUserByLogin(details.getUsername()).getTeam().getId());
-            userService.deleteSystemRole(userService.findUserByLogin(details.getUsername()).getId(), SystemRole.ROLE_CAPTAIN);
-            return ResponseEntity.status(HttpStatus.OK).body("Successfully deleted");
-        } catch (TeamNotFoundException | UserNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        }
+    public ResponseEntity<Void> deleteTeam(@AuthenticationPrincipal UserDetails details) {
+        User currentUser = userService.getCurrentUser(details);
+        for (var u : teamService.findMembersByTeam(currentUser.getTeam().getId()))
+            userService.deleteSystemRole(u.getId(), SystemRole.ROLE_PLAYER);
+        teamService.deleteTeam(currentUser.getTeam().getId());
+        userService.deleteSystemRole(currentUser.getId(), SystemRole.ROLE_CAPTAIN);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
-    @PostMapping("/delete_team")
-    @PreAuthorize("hasRole('ROLE_ADMIN')")
-    public ResponseEntity<String> deleteTeam(@RequestParam Long teamId) {
-        try {
-            for (var u : teamService.findMembersByTeam(teamId)) {
-                userService.deleteSystemRole(u.getId(), SystemRole.ROLE_PLAYER);
-                userService.deleteSystemRole(u.getId(), SystemRole.ROLE_CAPTAIN);
-            }
-            teamService.deleteTeam(teamId);
-            return ResponseEntity.status(HttpStatus.OK).body("Successfully deleted");
-        } catch (TeamNotFoundException | UserNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(e.getMessage());
-        }
+    @GetMapping("/{teamId}")
+    public ResponseEntity<TeamInfoResponse> getTeamById(@PathVariable Long teamId) {
+        Team team = teamService.findTeamById(teamId);
+        return ResponseEntity.status(HttpStatus.OK).body(mapper.toTeamInfoResponse(team));
     }
 
-    @GetMapping("/id_{id}")
-    public ResponseEntity<?> getTeamById(@PathVariable Long id) {
-        try {
-            Team team = teamService.findTeamById(id);
-            return ResponseEntity.status(HttpStatus.OK).body(mapper.toTeamInfoResponse(team));
-        } catch (TeamNotFoundException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
-        }
-    }
-
-    @GetMapping("/game_{game}")
-    public ResponseEntity<List<TeamInfoResponse>> getTeamsByGame(@PathVariable Game game) {
+    @GetMapping("/game")
+    public ResponseEntity<List<TeamInfoResponse>> getTeamsByGame(@RequestParam Game game) {
         List<TeamInfoResponse> dtos = new ArrayList<>();
         for (var t : teamService.findTeamsByGame(game))
             dtos.add(mapper.toTeamInfoResponse(t));
         return ResponseEntity.status(HttpStatus.OK).body(dtos);
+    }
+
+    @GetMapping("/games")
+    public ResponseEntity<List<Game>> getAllGames() {
+        return ResponseEntity.status(HttpStatus.OK).body(teamService.getAllGames());
     }
 }

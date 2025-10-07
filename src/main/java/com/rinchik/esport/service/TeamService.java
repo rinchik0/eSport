@@ -6,6 +6,7 @@ import com.rinchik.esport.exception.*;
 import com.rinchik.esport.model.Team;
 import com.rinchik.esport.model.User;
 import com.rinchik.esport.model.enums.Game;
+import com.rinchik.esport.model.enums.TeamRole;
 import com.rinchik.esport.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -25,21 +26,20 @@ public class TeamService {
         return teamRepo.findAll();
     }
 
+    public Team findTeamById(Long id) {
+        return teamRepo.findById(id)
+                .orElseThrow(() -> new TeamNotFoundException(id));
+    }
+
     public Team findTeamByUser(User user) {
         if (user.getTeam() == null)
             throw new UserNotTeamMemberException(user.getId());
 
-        return teamRepo.findById(user.getTeam().getId())
-                .orElseThrow(() -> new TeamNotFoundException(user.getTeam().getId()));
+        return findTeamById(user.getTeam().getId());
     }
 
     public List<Team> findTeamsByGame(Game game) {
         return teamRepo.findByGame(game);
-    }
-
-    public Team findTeamById(Long id) {
-        return teamRepo.findById(id)
-                .orElseThrow(() -> new TeamNotFoundException(id));
     }
 
     @Transactional
@@ -59,8 +59,7 @@ public class TeamService {
 
     @Transactional
     public Team updateTeam(Long id, TeamChangesRequest dto) {
-        Team team = teamRepo.findById(id)
-                .orElseThrow(() -> new TeamNotFoundException(id));
+        Team team = findTeamById(id);
         if (!teamRepo.existsByName(dto.getName()) ||
                 teamRepo.existsByName(dto.getName()) &&
                         (teamRepo.findByName(dto.getName())
@@ -73,15 +72,13 @@ public class TeamService {
     }
 
     public List<User> findMembersByTeam(Long id) {
-        Team team = teamRepo.findById(id)
-                .orElseThrow(() -> new TeamNotFoundException(id));
+        Team team = findTeamById(id);
         return team.getMembers();
     }
 
     @Transactional
-    public void addMemberToTeam(Long teamId, Long userId) throws UserNotFoundException {
-        Team team = teamRepo.findById(teamId)
-                .orElseThrow(() -> new TeamNotFoundException(teamId));
+    public void addMemberToTeam(Long teamId, Long userId) {
+        Team team = findTeamById(teamId);
         User user = userService.findUserById(userId);
 
         if (team.getMembers().contains(user))
@@ -92,9 +89,8 @@ public class TeamService {
     }
 
     @Transactional
-    public void deleteMemberFromTeam(Long teamId, Long userId) throws UserNotFoundException {
-        Team team = teamRepo.findById(teamId)
-                .orElseThrow(() -> new TeamNotFoundException(teamId));
+    public void deleteMemberFromTeam(Long teamId, Long userId) {
+        Team team = findTeamById(teamId);
         User user = userService.findUserById(userId);
 
         if (!team.getMembers().contains(user))
@@ -106,9 +102,16 @@ public class TeamService {
     }
 
     @Transactional
+    public void deleteMemberFromTeamByCaptain(Long teamId, Long userId, Long captainId) {
+        if (userService.isFromOneTeam(userId, captainId))
+            deleteMemberFromTeam(teamId, userId);
+        else
+            throw new NotCaptainOfTeamException(captainId, teamId);
+    }
+
+    @Transactional
     public void deleteTeam(Long id) {
-        Team team = teamRepo.findById(id)
-                .orElseThrow(() -> new TeamNotFoundException(id));
+        Team team = findTeamById(id);
 
         for (var m : team.getMembers()) {
             m.setTeam(null);
@@ -117,5 +120,9 @@ public class TeamService {
         team.getMembers().clear();
 
         teamRepo.delete(team);
+    }
+
+    public List<Game> getAllGames() {
+        return Game.getAll();
     }
 }

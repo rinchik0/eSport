@@ -4,6 +4,7 @@ import com.rinchik.esport.dto.event.EventCreatingRequest;
 import com.rinchik.esport.exception.*;
 import com.rinchik.esport.model.Event;
 import com.rinchik.esport.model.User;
+import com.rinchik.esport.model.enums.EventType;
 import com.rinchik.esport.model.enums.Game;
 import com.rinchik.esport.repository.EventRepository;
 import lombok.RequiredArgsConstructor;
@@ -60,16 +61,14 @@ public class EventService {
         return eventRepo.save(newEvent);
     }
 
-    public boolean isUserOrganizerForEvent(Long userId, Long eventId) {
-        Event event = eventRepo.findById(eventId)
-                .orElseThrow(() -> new EventNotFoundException(eventId));
+    private boolean isUserOrganizerForEvent(Long userId, Long eventId) {
+        Event event = findEventById(eventId);
         return userId.equals(event.getOrganizer().getId());
     }
 
     @Transactional
     public void deleteEvent(Long id) {
-        Event event = eventRepo.findById(id)
-                .orElseThrow(() -> new EventNotFoundException(id));
+        Event event = findEventById(id);
 
         event.setTeam(null);
         event.setOrganizer(null);
@@ -78,17 +77,22 @@ public class EventService {
         eventRepo.delete(event);
     }
 
-    public List<User> findParticipantsByEvent(Long id) {
-        Event event = eventRepo.findById(id)
-                .orElseThrow(() -> new EventNotFoundException(id));
+    @Transactional
+    public void deleteEventByOrganizer(Long eventId, Long userId) {
+        if (isUserOrganizerForEvent(userId, eventId))
+            deleteEvent(eventId);
+        else
+            throw new NotEventOrganizerException(userId, eventId);
+    }
 
+    public List<User> findParticipantsByEvent(Long id) {
+        Event event = findEventById(id);
         return event.getParticipants();
     }
 
     @Transactional
     public void addParticipantToEvent(Long eventId, Long userId) {
-        Event event = eventRepo.findById(eventId)
-                .orElseThrow(() -> new EventNotFoundException(eventId));
+        Event event = findEventById(eventId);
         User user = userService.findUserById(userId);
 
         if (event.getParticipants().contains(user))
@@ -98,9 +102,16 @@ public class EventService {
     }
 
     @Transactional
+    public void addParticipantToEventByOrganizer(Long eventId, Long userId, Long organizerId) {
+        if (isUserOrganizerForEvent(organizerId, eventId))
+            addParticipantToEvent(eventId, userId);
+        else
+            throw new NotEventOrganizerException(organizerId, eventId);
+    }
+
+    @Transactional
     public void deleteParticipantFromEvent(Long eventId, Long userId) {
-        Event event = eventRepo.findById(eventId)
-                .orElseThrow(() -> new EventNotFoundException(eventId));
+        Event event = findEventById(eventId);
         User user = userService.findUserById(userId);
 
         if (!event.getParticipants().contains(user))
@@ -109,11 +120,23 @@ public class EventService {
         event.getParticipants().remove(user);
     }
 
+    @Transactional
+    public void deleteParticipantFromEventByOrganizer(Long eventId, Long userId, Long organizerId) {
+        if (isUserOrganizerForEvent(organizerId, eventId))
+            deleteParticipantFromEvent(eventId, userId);
+        else
+            throw new NotEventOrganizerException(organizerId, eventId);
+    }
+
     public List<Event> getEventsByOrganizer(Long userId) {
         return eventRepo.findByOrganizer(userService.findUserById(userId));
     }
 
     public List<Event> getEventsByParticipant(Long userId) {
         return eventRepo.findByParticipantsId(userId);
+    }
+
+    public List<EventType> getAllEventTypes() {
+        return EventType.getAll();
     }
 }
