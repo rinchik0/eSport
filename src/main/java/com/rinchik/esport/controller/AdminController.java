@@ -3,7 +3,6 @@ package com.rinchik.esport.controller;
 import com.rinchik.esport.dto.event.EventCreatingRequest;
 import com.rinchik.esport.dto.event.EventInfoResponse;
 import com.rinchik.esport.dto.user.UserInfoResponse;
-import com.rinchik.esport.exception.*;
 import com.rinchik.esport.mapper.EventMapper;
 import com.rinchik.esport.mapper.UserMapper;
 import com.rinchik.esport.model.Event;

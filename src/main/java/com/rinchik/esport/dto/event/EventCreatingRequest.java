@@ -17,10 +17,10 @@ public class EventCreatingRequest {
 
     private String description;
 
-    @NotNull(message = "Type of event can not be empty")
-    private EventType type;
+    //@NotNull(message = "Type of event can not be empty")
+    //private EventType type;
 
-    @NotNull(message = "Date of event is required")
-    @Future(message = "Date of event must be in the future")
-    private LocalDateTime date;
+    //@NotNull(message = "Date of event is required")
+    //@Future(message = "Date of event must be in the future")
+    //private LocalDateTime date;
 }

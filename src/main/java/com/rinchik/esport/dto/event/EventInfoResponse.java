@@ -8,11 +8,12 @@ import java.util.List;
 
 @Data
 public class EventInfoResponse {
+    private Long id;
     private String name;
     private String description;
-    private EventType type;
-    private LocalDateTime date;
-    private String organizerName;
-    private List<String> participantNames;
-    private String teamName;
+    //private EventType type;
+    //private LocalDateTime date;
+    //private String organizerName;
+    //private List<String> participantNames;
+    //private String teamName;
 }

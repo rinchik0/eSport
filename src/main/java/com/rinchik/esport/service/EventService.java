@@ -49,11 +49,11 @@ public class EventService {
 
         newEvent.setName(dto.getName());
         newEvent.setDescription(dto.getDescription() == null ? null : dto.getDescription());
-        newEvent.setType(dto.getType());
-        newEvent.setDate(dto.getDate());
+        //newEvent.setType(dto.getType());
+        //newEvent.setDate(dto.getDate());
 
         newEvent.setOrganizer(userService.findUserById(organizerId));
-        newEvent.setTeam(teamService.findTeamById(teamId));
+        //newEvent.setTeam(teamService.findTeamById(teamId));
 
         newEvent.setParticipants(new ArrayList<>());
         newEvent.getParticipants().add(userService.findUserById(organizerId));

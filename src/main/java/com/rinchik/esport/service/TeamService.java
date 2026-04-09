@@ -6,7 +6,6 @@ import com.rinchik.esport.exception.*;
 import com.rinchik.esport.model.Team;
 import com.rinchik.esport.model.User;
 import com.rinchik.esport.model.enums.Game;
-import com.rinchik.esport.model.enums.TeamRole;
 import com.rinchik.esport.repository.TeamRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

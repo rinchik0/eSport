@@ -9,6 +9,8 @@ ALTER SEQUENCE events_id_seq RESTART WITH 1;
 ALTER SEQUENCE teams_id_seq RESTART WITH 1;
 ALTER SEQUENCE articles_id_seq RESTART WITH 1;
 INSERT INTO users (login, password, email)
-VALUES ('rin', '$2a$10$LIfdmZMS.OP4oUaq9qgHIeWAvFucyj7Mg7wtksKzAdjnFTCp.fdd6', 'ariadna.kolupaeva@yandex.ru');
+VALUES ('rin', '$2a$10$LIfdmZMS.OP4oUaq9qgHIeWAvFucyj7Mg7wtksKzAdjnFTCp.fdd6', 'ariadna.kolupaeva@yandex.ru'),
+('mur', '$2a$10$6OWMdxxGQKFX5u6LzFVmMOtdsmz6ljnuDkyGYvLXvLAN4wmae16j2', 'mur@gmail.com');
 INSERT INTO user_roles (user_id, role)
-VALUES (1, 'ROLE_ADMIN');
+VALUES (1, 'ROLE_ADMIN'),
+(2, 'ROLE_ADMIN');

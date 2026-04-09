@@ -24,11 +24,11 @@ public class Event {
 
     private String description;
 
-    @Column(nullable = false)
+    //@Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private EventType type;
 
-    @Column(nullable = false)
+    //@Column(nullable = false)
     private LocalDateTime date;
 
     private Game game;
