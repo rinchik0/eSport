@@ -5,7 +5,10 @@ import com.rinchik.esport.model.enums.TeamRole;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -21,7 +24,7 @@ public class User {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String login;
+    private String username;
 
     @Column(nullable = false)
     private String password;
@@ -32,7 +35,18 @@ public class User {
     @Column(name = "role")
     private Set<SystemRole> roles = new HashSet<>();
 
-    private String description;
+    private String bio;
+
+    @Column(name = "avatar_url")
+    private String avatarUrl;
+
+    @Column(nullable = false)
+    @CreationTimestamp
+    private LocalDateTime lastOnline;
+
+    @Column(nullable = false, updatable = false)
+    @CreationTimestamp
+    private LocalDateTime joinDate;
 
     @Column(nullable = false)
     private String email;
@@ -44,12 +58,24 @@ public class User {
     @JoinColumn(name = "team_id")
     private Team team;
 
-    @OneToMany(mappedBy = "organizer")
+    @OneToMany(mappedBy = "organizer", cascade = CascadeType.REMOVE)
     private List<Event> organizedEvents = new ArrayList<>();
+
+    @OneToMany(mappedBy = "author", cascade = CascadeType.REMOVE)
+    private List<Methodology> methodologies = new ArrayList<>();
+
+    @OneToOne(mappedBy = "captain", cascade = CascadeType.REMOVE)
+    private Team captainedTeam;
 
     @ManyToMany(mappedBy = "participants")
     private List<Event> eventsParticipating = new ArrayList<>();
 
-    @OneToMany(mappedBy = "author")
-    private List<Article> articles = new ArrayList<>();
+    @OneToOne(mappedBy = "user", cascade = CascadeType.REMOVE)
+    private Rates rates;
+
+    @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
+    private List<TeamRequest> requests = new ArrayList<>();
+
+    @Column(nullable = false)
+    private String faceitNickname;
 }

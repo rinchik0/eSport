@@ -13,6 +13,8 @@ public class TeamCreatingRequest {
     private String name;
 
     private String description;
+    private String contacts;
+    private String requirements;
 
     @NotNull(message = "Game can not be empty")
     private Game game;

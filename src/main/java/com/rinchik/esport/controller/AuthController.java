@@ -6,6 +6,7 @@ import com.rinchik.esport.dto.user.UserLoginRequest;
 import com.rinchik.esport.dto.user.UserRegistrationRequest;
 import com.rinchik.esport.mapper.UserMapper;
 import com.rinchik.esport.model.User;
+import com.rinchik.esport.model.enums.SystemRole;
 import com.rinchik.esport.service.JwtTokenService;
 import com.rinchik.esport.service.UserService;
 import jakarta.validation.Valid;
@@ -15,6 +16,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Arrays;
+import java.util.HashSet;
 
 @RestController
 @RequiredArgsConstructor
@@ -27,6 +31,7 @@ public class AuthController {
     @PostMapping("/register")
     public ResponseEntity<LoginResponse> registerUser(@Valid @RequestBody UserRegistrationRequest dto) {
         User user = userService.registerNewUser(dto);
+        userService.addSystemRole(user.getId(), SystemRole.ROLE_GUEST);
         String token = jwtService.generateToken(user.getId());
         return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toLoginResponse(user, token));
     }

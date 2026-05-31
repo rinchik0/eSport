@@ -14,6 +14,9 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/users")
@@ -35,11 +38,27 @@ public class UserController {
                 .body(mapper.toUserInfoResponse(service.updateUser(user.getId(), dto)));
     }
 
+    @DeleteMapping("/me")
+    public ResponseEntity<Void> deleteCurrentUser(@AuthenticationPrincipal UserDetails details) {
+        User user = service.getCurrentUser(details);
+        service.deleteUser(user.getId());
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
+    }
+
     @PutMapping("/me/password")
     public ResponseEntity<Void> changeCurrentUserPassword(@AuthenticationPrincipal UserDetails details,
                                                           @Valid @RequestBody UserChangePasswordRequest dto) {
         User user = service.getCurrentUser(details);
         service.changePassword(user.getId(), dto.getOldPassword(), dto.getNewPassword());
         return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @GetMapping("/all")
+    public ResponseEntity<List<UserInfoResponse>> getAllUsers() {
+        List<User> users = service.findAllUsers();
+        List<UserInfoResponse> userDtos = new ArrayList<>();
+        for (var user : users)
+            userDtos.add(mapper.toUserInfoResponse(user));
+        return ResponseEntity.status(HttpStatus.OK).body(userDtos);
     }
 }

@@ -50,7 +50,8 @@ public class SecurityConfig {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/api/**") // Все API endpoints
-                        .allowedOrigins("http://localhost:3000", "http://192.168.0.11:8080") // URL фронтенда
+                        .allowedOrigins("http://localhost:3000", "http://192.168.0.11:8080",
+                                "https://localhost:3000", "https://192.168.0.11:8080") // URL фронтенда
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                         .allowedHeaders("*")
                         .allowCredentials(true);

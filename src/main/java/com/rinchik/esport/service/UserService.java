@@ -4,6 +4,7 @@ import com.rinchik.esport.dto.user.UserChangesRequest;
 import com.rinchik.esport.dto.user.UserLoginRequest;
 import com.rinchik.esport.dto.user.UserRegistrationRequest;
 import com.rinchik.esport.exception.*;
+import com.rinchik.esport.model.Event;
 import com.rinchik.esport.model.User;
 import com.rinchik.esport.model.enums.SystemRole;
 import com.rinchik.esport.model.enums.TeamRole;
@@ -14,8 +15,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
 
 @Service
@@ -28,28 +27,26 @@ public class UserService {
 
     @Transactional
     public User registerNewUser(UserRegistrationRequest dto) {
-        if (userRepo.existsByLogin(dto.getLogin())) {
-            throw new LoginAlreadyTakenException(dto.getLogin());
+        if (userRepo.existsByUsername(dto.getUsername())) {
+            throw new LoginAlreadyTakenException(dto.getUsername());
         }
 
         User newUser = new User();
-        newUser.setLogin(dto.getLogin());
+        newUser.setUsername(dto.getUsername());
         newUser.setEmail(dto.getEmail());
 
         newUser.setPassword(encoder.encode(dto.getPassword()));
 
-        newUser.setRoles(new HashSet<>(Arrays.asList(SystemRole.ROLE_GUEST)));
-
         return userRepo.save(newUser);
     }
 
-    public User findUserByLogin(String login) {
-        return userRepo.findByLogin(login)
-                .orElseThrow(() -> new UserNotFoundException(login));
+    public User findUserByUsername(String username) {
+        return userRepo.findByUsername(username)
+                .orElseThrow(() -> new UserNotFoundException(username));
     }
 
     public User loginUser(UserLoginRequest dto) {
-        User user = findUserByLogin(dto.getLogin());
+        User user = findUserByUsername(dto.getUsername());
 
         if (!encoder.matches(dto.getPassword(), user.getPassword())) {
             throw new InvalidPasswordException();
@@ -71,22 +68,25 @@ public class UserService {
     public User updateUser(Long id, UserChangesRequest dto) {
         User user = findUserById(id);
 
-        if (!dto.getDescription().equals(""))
-            user.setDescription(dto.getDescription());
+        if ((dto.getBio() != null) && !dto.getBio().equals(""))
+            user.setBio(dto.getBio());
 
-        if (!dto.getEmail().equals(""))
+        if ((dto.getEmail() != null) && !dto.getEmail().equals(""))
             user.setEmail(dto.getEmail());
 
-        if (!dto.getLogin().equals("")) {
-            if (!userRepo.existsByLogin(dto.getLogin()) ||
-                    userRepo.existsByLogin(dto.getLogin()) &&
-                            (userRepo.findByLogin(dto.getLogin())
+        if ((dto.getUsername() != null) && !dto.getUsername().equals("")) {
+            if (!userRepo.existsByUsername(dto.getUsername()) ||
+                    userRepo.existsByUsername(dto.getUsername()) &&
+                            (userRepo.findByUsername(dto.getUsername())
                                     .orElseThrow(() -> new UserNotFoundException(id))
                                     .getId().equals(id)))
-                user.setLogin(dto.getLogin());
+                user.setUsername(dto.getUsername());
             else
-                throw new LoginAlreadyTakenException(dto.getLogin());
+                throw new LoginAlreadyTakenException(dto.getUsername());
         }
+
+        if ((dto.getAvatarUrl() != null) && !dto.getAvatarUrl().equals(""))
+            user.setAvatarUrl(dto.getAvatarUrl());
         return user;
     }
 
@@ -133,18 +133,21 @@ public class UserService {
             else
                 throw new RoleNotMatchesGameException(newRole, findUserById(captainId).getTeam().getGame());
         else
-            throw new NotCaptainOfTeamException(captainId, findUserById(userId).getTeam().getId());
+            throw new UserNotCaptainOfTeamException(captainId, findUserById(userId).getTeam().getId());
     }
 
     @Transactional
     public void deleteUser(Long id) {
-        if (userRepo.existsById(id))
-            userRepo.deleteById(id);
-        else
-            throw new UserNotFoundException(id);
+        User user = findUserById(id);
+        if (user.getTeam() != null)
+            user.getTeam().getMembers().remove(user);
+        if (!user.getEventsParticipating().isEmpty())
+            for (Event e : user.getEventsParticipating())
+                e.getParticipants().remove(user);
+        userRepo.deleteById(id);
     }
 
     public User getCurrentUser(UserDetails details) {
-        return findUserByLogin(details.getUsername());
+        return findUserByUsername(details.getUsername());
     }
 }

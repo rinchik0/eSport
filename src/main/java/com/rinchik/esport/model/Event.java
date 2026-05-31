@@ -1,7 +1,7 @@
 package com.rinchik.esport.model;
 
+import com.rinchik.esport.model.enums.EventStatus;
 import com.rinchik.esport.model.enums.EventType;
-import com.rinchik.esport.model.enums.Game;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -20,18 +20,28 @@ public class Event {
     private Long id;
 
     @Column(nullable = false)
-    private String name;
+    private String title;
 
     private String description;
+    private String prize;
 
-    //@Column(nullable = false)
+    @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private EventType type;
 
-    //@Column(nullable = false)
+    @Column(nullable = false)
     private LocalDateTime date;
 
-    private Game game;
+    @ManyToOne
+    @JoinColumn(name = "organizer_id", nullable = false)
+    private User organizer;
+
+    @ManyToOne(optional = true)
+    @JoinColumn(name = "team_id")
+    private Team team;
+
+    @Column(nullable = false)
+    private Integer maxAmountOfParticipants;
 
     @ManyToMany
     @JoinTable(
@@ -41,11 +51,7 @@ public class Event {
     )
     private List<User> participants = new ArrayList<>();
 
-    @ManyToOne
-    @JoinColumn(name = "organizer_id", nullable = false)
-    private User organizer;
-
-    @ManyToOne(optional = true)
-    @JoinColumn(name = "team_id")
-    private Team team;
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private EventStatus status;
 }

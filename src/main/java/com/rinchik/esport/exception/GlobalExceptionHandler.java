@@ -12,7 +12,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler({
             UserNotFoundException.class,
             TeamNotFoundException.class,
-            EventNotFoundException.class
+            EventNotFoundException.class,
+            MethodologyNotFoundException.class,
+            MethodologyBlockNotFoundException.class,
+            TeamRequestNotFoundException.class
     })
     public ResponseEntity<ErrorResponse> handleNotFound(RuntimeException e) {
         ErrorResponse response = new ErrorResponse("NOT FOUND", e.getMessage(), HttpStatus.NOT_FOUND);
@@ -24,6 +27,7 @@ public class GlobalExceptionHandler {
             UserAlreadyTeamMemberException.class,
             UserNotEventParticipantException.class,
             UserNotTeamMemberException.class,
+            UserIsMemberOfAnotherTeamException.class,
             TeamNameAlreadyTakenException.class,
             LoginAlreadyTakenException.class
     })
@@ -41,8 +45,10 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({
-            NotEventOrganizerException.class,
-            NotCaptainOfTeamException.class
+            UserNotEventOrganizerException.class,
+            UserNotCaptainOfTeamException.class,
+            UserNotMethodologyAuthorException.class,
+            UserNotTeamRequestCreatorException.class
     })
     public ResponseEntity<ErrorResponse> handleForbidden(RuntimeException e) {
         ErrorResponse response = new ErrorResponse("FORBIDDEN", e.getMessage(), HttpStatus.FORBIDDEN);

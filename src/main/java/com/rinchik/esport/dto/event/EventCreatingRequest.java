@@ -11,16 +11,18 @@ import java.time.LocalDateTime;
 
 @Data
 public class EventCreatingRequest {
-    @NotBlank(message = "Name of event can not be empty")
-    @Size(min = 3, max = 50, message = "Name of event must be between 3 and 50 characters")
-    private String name;
+    @NotBlank(message = "Title of event can not be empty")
+    @Size(min = 3, max = 50, message = "Title of event must be between 3 and 50 characters")
+    private String title;
 
     private String description;
+    private Integer maxAmountOfParticipants;
+    private String prize;
 
-    //@NotNull(message = "Type of event can not be empty")
-    //private EventType type;
+    @NotNull(message = "Type of event can not be empty")
+    private EventType type;
 
-    //@NotNull(message = "Date of event is required")
-    //@Future(message = "Date of event must be in the future")
-    //private LocalDateTime date;
+    @NotNull(message = "Date of event is required")
+    @Future(message = "Date of event must be in the future")
+    private LocalDateTime date;
 }

@@ -13,10 +13,9 @@ import java.util.Optional;
 @Repository
 public interface EventRepository extends JpaRepository<Event, Long> {
     List<Event> findAll();
-    List<Event> findByGame(Game game);
     Optional<Event> findById(Long id);
     List<Event> findByTeam(Team team);
     List<Event> findByTeamIsNull();
     List<Event> findByOrganizer(User user);
-    List<Event> findByParticipantsId(Long userId);
+    List<Event> findByParticipantsId(Long id);
 }

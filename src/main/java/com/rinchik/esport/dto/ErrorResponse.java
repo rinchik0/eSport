@@ -1,7 +1,9 @@
 package com.rinchik.esport.dto;
 
+import lombok.Data;
 import org.springframework.http.HttpStatus;
 
+@Data
 public class ErrorResponse {
     private String error;
     private String message;

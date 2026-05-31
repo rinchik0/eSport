@@ -42,7 +42,7 @@ public class TeamService {
     }
 
     @Transactional
-    public Team createNewTeam(TeamCreatingRequest dto) {
+    public Team createNewTeam(TeamCreatingRequest dto, Long captainId) {
         if (teamRepo.existsByName(dto.getName()))
             throw new TeamNameAlreadyTakenException(dto.getName());
 
@@ -52,6 +52,8 @@ public class TeamService {
         newTeam.setGame(dto.getGame());
 
         newTeam.setMembers(new ArrayList<>());
+
+        newTeam.setCaptain(userService.findUserById(captainId));
 
         return teamRepo.save(newTeam);
     }
@@ -105,7 +107,7 @@ public class TeamService {
         if (userService.isFromOneTeam(userId, captainId))
             deleteMemberFromTeam(teamId, userId);
         else
-            throw new NotCaptainOfTeamException(captainId, teamId);
+            throw new UserNotCaptainOfTeamException(captainId, teamId);
     }
 
     @Transactional
@@ -123,5 +125,20 @@ public class TeamService {
 
     public List<Game> getAllGames() {
         return Game.getAll();
+    }
+
+    @Transactional
+    public void changeCaptain(Long oldCaptainId, Long newCaptainId) {
+        User newCaptain = userService.findUserById(newCaptainId);
+        Team team = findTeamByUser(userService.findUserById(oldCaptainId));
+        try {
+            Team newCaptainTeam = findTeamByUser(newCaptain);
+            if (newCaptainTeam.getId() == team.getId())
+                team.setCaptain(userService.findUserById(newCaptainId));
+            else
+                throw new UserIsMemberOfAnotherTeamException(newCaptainId);
+        } catch (UserNotTeamMemberException e) {
+            team.setCaptain(newCaptain);
+        }
     }
 }
