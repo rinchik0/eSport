@@ -1,17 +1,17 @@
 package com.rinchik.esport.mapper;
 
+import com.rinchik.esport.dto.team.ResponseTimeResponse;
 import com.rinchik.esport.dto.team.TeamInfoResponse;
+import com.rinchik.esport.dto.team.TeamRatesInfoResponse;
 import com.rinchik.esport.dto.teamrequest.TeamRequestInfoResponse;
 import com.rinchik.esport.dto.user.UserShortInfoResponse;
 import com.rinchik.esport.model.Team;
 import com.rinchik.esport.model.TeamRequest;
 import com.rinchik.esport.model.User;
-import com.rinchik.esport.model.enums.Game;
-import com.rinchik.esport.model.enums.TeamRequestStatus;
 import com.rinchik.esport.model.enums.TeamRole;
 import org.springframework.stereotype.Component;
 
-import java.time.LocalDateTime;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -60,6 +60,21 @@ public class TeamMapper {
         UserShortInfoResponse dto = new UserShortInfoResponse();
         dto.setUserId(user.getId());
         dto.setUserName(dto.getUserName());
+        return dto;
+    }
+
+    public TeamRatesInfoResponse toTeamRatesInfoResponse(Team team, Double zScore, int rankPosition) {
+        TeamRatesInfoResponse dto = new TeamRatesInfoResponse();
+        dto.setTeamId(team.getId());
+        dto.setTeamName(team.getName());
+        dto.setRankPosition(rankPosition);
+        dto.setZScore(zScore);
+        return dto;
+    }
+
+    public ResponseTimeResponse toResponseTeamResponse(long time) {
+        ResponseTimeResponse dto = new ResponseTimeResponse();
+        dto.setTime(time);
         return dto;
     }
 }

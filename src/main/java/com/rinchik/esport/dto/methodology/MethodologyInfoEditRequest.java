@@ -1,5 +1,6 @@
 package com.rinchik.esport.dto.methodology;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.rinchik.esport.model.enums.MethodologyLevel;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -13,7 +14,10 @@ public class MethodologyInfoEditRequest {
     private String title;
 
     private String description;
+
+    @JsonProperty("image_url")
     private String imageUrl;
+
     private String duration;
     private String category;
 

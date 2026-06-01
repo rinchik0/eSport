@@ -19,8 +19,8 @@ public class EventMapper {
         dto.setTitle(event.getTitle());
         dto.setDescription(event.getDescription());
         dto.setId(event.getId());
-        dto.setTeamId(event.getTeam().getId());
-        dto.setTeamName(event.getTeam().getName());
+        dto.setTeamId(event.getTeam() == null ? null : event.getTeam().getId());
+        dto.setTeamName(event.getTeam() == null ? null : event.getTeam().getName());
         dto.setDate(event.getDate());
         dto.setType(event.getType());
         dto.setOrganizerId(event.getOrganizer().getId());

@@ -21,11 +21,12 @@ public class Rates {
     private User user;
 
     private Double KD;
-    private Double ADR;
+    //private Double ADR;
+    private Double averageHeadshots;
     private Double WinRate;
     private Double trainingAttendance;
     private Double tournamentPlayed;
-    private double hoursPlayed;
+    private Double hoursPlayed;
 
     @UpdateTimestamp
     private LocalDateTime lastUpdateDate;

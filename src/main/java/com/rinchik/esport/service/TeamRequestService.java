@@ -13,7 +13,12 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +26,7 @@ import java.util.List;
 public class TeamRequestService {
     private final TeamRequestRepository requestRepo;
     private final TeamService teamService;
+    private final RatesService ratesService;
 
     @Transactional
     public TeamRequest createNewTeamRequest(TeamRequestMessageRequest dto, User user, Long teamId) {
@@ -33,8 +39,43 @@ public class TeamRequestService {
         return requestRepo.save(request);
     }
 
-    public List<TeamRequest> findTeamRequests(Team team) {
+    public List<TeamRequest> findTeamRequestsByTeam(Team team) {
         return requestRepo.findByTeam(team);
+    }
+
+    public List<TeamRequest> findTeamRequestsRanking(Team team, ArrayList<Integer> weights) {
+        ArrayList<Double> normalizedWeights = ratesService.normalizeWeights(weights);
+        List<TeamRequest> requests = findTeamRequestsByTeam(team);
+        if (requests.isEmpty()) {
+            return new ArrayList<>();
+        }
+        Map<Long, TeamRequest> latestRequestByUser = new HashMap<>();
+        for (TeamRequest request : requests) {
+            Long userId = request.getUser().getId();
+            TeamRequest existing = latestRequestByUser.get(userId);
+            if (existing == null || request.getCreatedDate().isAfter(existing.getCreatedDate())) {
+                latestRequestByUser.put(userId, request);
+            }
+        }
+        List<User> uniqueUsers = new ArrayList<>();
+        for (TeamRequest request : latestRequestByUser.values()) {
+            uniqueUsers.add(request.getUser());
+        }
+        ArrayList<Map.Entry<Long, Double>> ranking = ratesService.getRatingFor(uniqueUsers, normalizedWeights);
+        Map<Long, Double> zScoreMap = new HashMap<>();
+        for (Map.Entry<Long, Double> entry : ranking) {
+            zScoreMap.put(entry.getKey(), entry.getValue());
+        }
+        List<TeamRequest> sortedRequests = new ArrayList<>(latestRequestByUser.values());
+        sortedRequests.sort((r1, r2) -> {
+            Double z1 = zScoreMap.get(r1.getUser().getId());
+            Double z2 = zScoreMap.get(r2.getUser().getId());
+            if (z1 == null && z2 == null) return 0;
+            if (z1 == null) return 1;
+            if (z2 == null) return -1;
+            return z2.compareTo(z1);
+        });
+        return sortedRequests;
     }
 
     public TeamRequest findTeamRequestById(Long requestId) {
@@ -50,6 +91,7 @@ public class TeamRequestService {
         if (!destTeam.getId().equals(captainedTeam.getId()))
             throw new UserNotCaptainOfTeamException(captain.getId(), destTeam.getId());
         request.setStatus(TeamRequestStatus.ACCEPTED);
+        request.setRespondedDate(LocalDateTime.now());
         return request;
     }
 
@@ -61,6 +103,7 @@ public class TeamRequestService {
         if (!destTeam.getId().equals(captainedTeam.getId()))
             throw new UserNotCaptainOfTeamException(captain.getId(), destTeam.getId());
         request.setStatus(TeamRequestStatus.DECLINED);
+        request.setRespondedDate(LocalDateTime.now());
         return request;
     }
 
@@ -74,5 +117,15 @@ public class TeamRequestService {
         if (!user.getId().equals(request.getUser().getId()))
             throw new UserNotTeamRequestCreatorException(user.getId(), teamRequestId);
         requestRepo.delete(request);
+    }
+
+    public long getResponseTimeByTeam(Long teamId) {
+        List<TeamRequest> requests = findTeamRequestsByTeam(teamService.findTeamById(teamId));
+        if (requests == null || requests.isEmpty())
+            return 0;
+        long sum = 0;
+        for (TeamRequest r : requests)
+            sum += Duration.between(r.getCreatedDate(), r.getRespondedDate()).toMinutes();
+        return sum / requests.size();
     }
 }

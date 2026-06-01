@@ -29,7 +29,6 @@ public class AdminController {
     private final EventService eventService;
     private final EventMapper eventMapper;
     private final UserService userService;
-    private final UserMapper userMapper;
     private final TeamService teamService;
     private final MethodologyService methodologyService;
     private final MethodologyMapper methodologyMapper;
@@ -53,7 +52,7 @@ public class AdminController {
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
-    @GetMapping("/methodology/all")
+    @GetMapping("/methodologies/all")
     public ResponseEntity<List<MethodologyInfoResponse>> getAllMethodologies() {
         List<MethodologyInfoResponse> dtos = new ArrayList<>();
         for (var e : methodologyService.findAllMethodologies())

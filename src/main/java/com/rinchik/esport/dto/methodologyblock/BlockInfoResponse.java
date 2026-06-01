@@ -1,5 +1,6 @@
 package com.rinchik.esport.dto.methodologyblock;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSubTypes;
 import com.fasterxml.jackson.annotation.JsonTypeInfo;
 import com.rinchik.esport.model.enums.MethodologyBlockType;
@@ -18,6 +19,8 @@ import lombok.Data;
 })
 public abstract class BlockInfoResponse {
     private Long id;
+
+    @JsonProperty("order_index")
     private int orderIndex;
 
     public abstract void setContent(String content);

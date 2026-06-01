@@ -1,5 +1,6 @@
 package com.rinchik.esport.dto.user;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.rinchik.esport.model.enums.SystemRole;
 import com.rinchik.esport.model.enums.TeamRole;
 import jakarta.validation.constraints.Email;
@@ -19,6 +20,8 @@ public class UserChangesRequest {
     private String email;
 
     private String bio;
+
+    @JsonProperty("avatar_url")
     private String avatarUrl;
 
 }

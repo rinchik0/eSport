@@ -30,6 +30,9 @@ public class UserMapper {
         dto.setAvatarUrl(user.getAvatarUrl());
         dto.setLastOnline(user.getLastOnline());
         dto.setJoinDate(user.getJoinDate());
+        dto.setFaceitNickname(user.getFaceitNickname());
+        dto.setFaceitPlayerId(user.getFaceitPlayerId());
+        dto.setSteamId(user.getSteamId());
         return dto;
     }
 
@@ -41,33 +44,26 @@ public class UserMapper {
         return dto;
     }
 
-    public RateInfoResponse toRateResponse(Rates rates, Double zScore, int rankPosition) {
-        RateInfoResponse dto = new RateInfoResponse();
-        dto.setUserId(rates.getUser().getId());
-        dto.setUserName(rates.getUser().getUsername());
-        dto.setKd(rates.getKD());
-        dto.setAdr(rates.getADR());
-        dto.setWinRate(rates.getWinRate());
-        dto.setTournamentPlayed(rates.getTournamentPlayed());
-        dto.setTrainingAttendance(rates.getTrainingAttendance());
-        dto.setHoursPlayed(rates.getHoursPlayed());
-        dto.setZScore(zScore);
-        dto.setRankPosition(rankPosition);
-        return dto;
-    }
-
     public RateInfoResponse toRateResponse(Rates rates) {
         RateInfoResponse dto = new RateInfoResponse();
         dto.setUserId(rates.getUser().getId());
         dto.setUserName(rates.getUser().getUsername());
         dto.setKd(rates.getKD());
-        dto.setAdr(rates.getADR());
+        //dto.setAdr(rates.getADR());
+        dto.setAverageHeadshots(rates.getAverageHeadshots());
         dto.setWinRate(rates.getWinRate());
         dto.setTournamentPlayed(rates.getTournamentPlayed());
         dto.setTrainingAttendance(rates.getTrainingAttendance());
         dto.setHoursPlayed(rates.getHoursPlayed());
         dto.setZScore(0.0);
         dto.setRankPosition(0);
+        return dto;
+    }
+
+    public RateInfoResponse toRateResponse(Rates rates, Double zScore, int rankPosition) {
+        RateInfoResponse dto = toRateResponse(rates);
+        dto.setZScore(zScore);
+        dto.setRankPosition(rankPosition);
         return dto;
     }
 }

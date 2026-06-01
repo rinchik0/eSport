@@ -6,8 +6,10 @@ target/
 
 ### Project ###
 db
+uploads
 src/main/resources/data.sql
 keystore.p12
+src/main/resources/application.yml
 
 ### STS ###
 .apt_generated

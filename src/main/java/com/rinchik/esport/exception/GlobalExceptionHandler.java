@@ -15,7 +15,9 @@ public class GlobalExceptionHandler {
             EventNotFoundException.class,
             MethodologyNotFoundException.class,
             MethodologyBlockNotFoundException.class,
-            TeamRequestNotFoundException.class
+            TeamRequestNotFoundException.class,
+            FaceitAccountNotFoundException.class,
+            SteamAccountNotFoundException.class
     })
     public ResponseEntity<ErrorResponse> handleNotFound(RuntimeException e) {
         ErrorResponse response = new ErrorResponse("NOT FOUND", e.getMessage(), HttpStatus.NOT_FOUND);
@@ -37,7 +39,9 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler({
-            InvalidPasswordException.class
+            InvalidPasswordException.class,
+            FaceitErrorException.class,
+            SteamErrorException.class
     })
     public ResponseEntity<ErrorResponse> handleBadRequest(RuntimeException e) {
         ErrorResponse response = new ErrorResponse("BAD REQUEST", e.getMessage(), HttpStatus.BAD_REQUEST);

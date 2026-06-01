@@ -19,25 +19,40 @@ public class RatesService {
     private final EventService eventService;
     private final TeamService teamService;
     private final AttendanceService attService;
+    private final FaceitService faceitService;
+    private final SteamService steamService;
     private final Integer updateIntervalInMinutes = 60;
 
     @Transactional
     private Rates updateRates(Rates rates) {
-        // Заглушка
-        rates.setKD(0.0);
-        rates.setADR(0.0);
-        rates.setWinRate(0.0);
-        rates.setHoursPlayed(0.0);
-        // Логика получения характеристик со стороннего API
+        if (rates.getUser().getFaceitPlayerId() != null && !rates.getUser().getFaceitPlayerId().equals("")) {
+            ArrayList<Double> faceit = faceitService.getParameters(rates.getUser());
+            rates.setKD(faceit.get(0));
+            rates.setWinRate(faceit.get(1));
+            rates.setAverageHeadshots(faceit.get(2));
+            // Заглушка
+            //rates.setADR(0.0);
+            rates.setHoursPlayed(steamService.getHours(rates.getUser()));
+        }
+        else {
+            rates.setKD(0.0);
+            rates.setWinRate(0.0);
+            rates.setAverageHeadshots(0.0);
+            rates.setHoursPlayed(0.0);
+        }
         List<Event> tournamentPlayed = eventService.findTournamentsByParticipant(rates.getUser().getId());
-        rates.setTournamentPlayed((double)tournamentPlayed.size());
-        List<Event> allTrainings = eventService.findAllTrainingsByTeam(rates.getUser().getTeam().getId());
-        List<TrainingAttendance> attendance = attService.findTrainingAttendanceByUser(rates.getUser().getId());
-        int attendedTrainings = 0;
-        for (TrainingAttendance a : attendance)
-            if (a.isAttended())
-                attendedTrainings++;
-        rates.setTrainingAttendance(allTrainings.isEmpty() ? 0.0 : (double) attendedTrainings / allTrainings.size());
+        rates.setTournamentPlayed((double) tournamentPlayed.size());
+        if (rates.getUser().getTeam() != null) {
+            List<Event> allTrainings = eventService.findAllTrainingsByTeam(rates.getUser().getTeam().getId());
+            List<TrainingAttendance> attendance = attService.findTrainingAttendanceByUser(rates.getUser().getId());
+            int attendedTrainings = 0;
+            for (TrainingAttendance a : attendance)
+                if (a.isAttended())
+                    attendedTrainings++;
+            rates.setTrainingAttendance(allTrainings.isEmpty() ? 0.0 : (double) attendedTrainings / allTrainings.size());
+        }
+        else
+            rates.setTrainingAttendance(0.0);
         return rates;
     }
 
@@ -84,14 +99,22 @@ public class RatesService {
     }
 
     private void addFieldToZScore(Map<Long, Double> userId_score, Map<Long, Double> fields, Double weight) {
-        Double mean = getArithmeticMean(new ArrayList(List.of(fields.values())));
-        Double deviation = getStandardDeviation(new ArrayList(List.of(fields.values())), mean);
+        ArrayList<Double> values = new ArrayList<>();
+        for (Double value : fields.values())
+            if (value != null)
+                values.add(value);
+        Double mean = getArithmeticMean(values);
+        Double deviation = getStandardDeviation(values, mean);
+
+        if (deviation == null || deviation == 0)
+            return;
 
         for (Map.Entry<Long, Double> entry : userId_score.entrySet())
             entry.setValue(entry.getValue() + ((fields.get(entry.getKey()) - mean) / deviation) * weight);
     }
 
-    private ArrayList<Map.Entry<Long, Double>> getRatingFor(List<User> users, ArrayList<Double> weights) {
+    @Transactional
+    private Map<Long, Double> getRates(List<User> users, ArrayList<Double> weights) {
         ArrayList<Rates> rates = new ArrayList<>();
         for (User u : users)
             rates.add(findRatesByUser(u.getId()));
@@ -105,10 +128,15 @@ public class RatesService {
             KDs.put(r.getUser().getId(), r.getKD());
         addFieldToZScore(userId_score, KDs, weights.get(0));
 
-        Map<Long, Double> ADRs = new HashMap<>();
+        //Map<Long, Double> ADRs = new HashMap<>();
+        //for (Rates r : rates)
+        //ADRs.put(r.getUser().getId(), r.getADR());
+        //addFieldToZScore(userId_score, ADRs, weights.get(1));
+
+        Map<Long, Double> averageHeadshots = new HashMap<>();
         for (Rates r : rates)
-            ADRs.put(r.getUser().getId(), r.getADR());
-        addFieldToZScore(userId_score, ADRs, weights.get(1));
+            averageHeadshots.put(r.getUser().getId(), r.getAverageHeadshots());
+        addFieldToZScore(userId_score, averageHeadshots, weights.get(1));
 
         Map<Long, Double> winRates = new HashMap<>();
         for (Rates r : rates)
@@ -130,17 +158,45 @@ public class RatesService {
             hoursPlayeds.put(r.getUser().getId(), r.getHoursPlayed());
         addFieldToZScore(userId_score, hoursPlayeds, weights.get(5));
 
-        ArrayList<Map.Entry<Long, Double>> result = new ArrayList<>(userId_score.entrySet());
+        return userId_score;
+    }
+
+    @Transactional
+    public ArrayList<Map.Entry<Long, Double>> getRatingFor(List<User> users, ArrayList<Double> weights) {
+        ArrayList<Map.Entry<Long, Double>> result = new ArrayList<>(
+                getRates(users, weights).entrySet());
         result.sort(Comparator.comparing(Map.Entry::getValue, Comparator.reverseOrder()));
         return result;
     }
 
+    @Transactional
     public ArrayList<Map.Entry<Long, Double>> getRatesByTeam(Long teamId, ArrayList<Double> weights) {
         Team team = teamService.findTeamById(teamId);
         return getRatingFor(team.getMembers(), weights);
     }
 
+    @Transactional
     public ArrayList<Map.Entry<Long, Double>> getCommonRates(ArrayList<Double> weights) {
         return getRatingFor(userService.findAllUsers(), weights);
+    }
+
+    private Double getTeamRate(Team team, Map<Long, Double> rates) {
+        Double rate = 0.0;
+        for (User player : team.getMembers())
+            rate += rates.get(player.getId());
+        return rate;
+    }
+
+    @Transactional
+    public ArrayList<Map.Entry<Long, Double>> getRatesOfTeams(ArrayList<Double> weights) {
+        Map<Long, Double> userRating = getRates(userService.findAllUsers(), weights);
+        List<Team> teams = teamService.findAllTeams();
+        Map<Long, Double> ratesOfTeams = new HashMap<>();
+        for (Team t : teams)
+            ratesOfTeams.put(t.getId(), getTeamRate(t, userRating));
+
+        ArrayList<Map.Entry<Long, Double>> result = new ArrayList<>(ratesOfTeams.entrySet());
+        result.sort(Comparator.comparing(Map.Entry::getValue, Comparator.reverseOrder()));
+        return result;
     }
 }

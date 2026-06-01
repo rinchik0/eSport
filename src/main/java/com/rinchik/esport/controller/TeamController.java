@@ -1,9 +1,6 @@
 package com.rinchik.esport.controller;
 
-import com.rinchik.esport.dto.team.TeamChangesRequest;
-import com.rinchik.esport.dto.team.TeamCreatingRequest;
-import com.rinchik.esport.dto.team.TeamInfoResponse;
-import com.rinchik.esport.dto.team.TeamRoleChangesRequest;
+import com.rinchik.esport.dto.team.*;
 import com.rinchik.esport.dto.teamrequest.TeamRequestInfoResponse;
 import com.rinchik.esport.dto.teamrequest.TeamRequestMessageRequest;
 import com.rinchik.esport.dto.user.UserShortInfoResponse;
@@ -27,6 +24,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -131,6 +129,12 @@ public class TeamController {
         return ResponseEntity.status(HttpStatus.OK).body(mapper.toTeamInfoResponse(team));
     }
 
+    @GetMapping("/{teamId}/response_time")
+    public ResponseEntity<ResponseTimeResponse> getResponseTimeByTeam(@PathVariable Long teamId) {
+        return ResponseEntity.status(HttpStatus.OK).body(
+                mapper.toResponseTeamResponse(teamRequestService.getResponseTimeByTeam(teamId)));
+    }
+
     @GetMapping("/{teamId}/members")
     public ResponseEntity<List<UserShortInfoResponse>> getMembersByTeam(@PathVariable Long teamId) {
         Team team = teamService.findTeamById(teamId);
@@ -180,9 +184,23 @@ public class TeamController {
 
     @GetMapping("/my_team/requests")
     @PreAuthorize("hasRole('ROLE_CAPTAIN')")
-    public ResponseEntity<List<TeamRequestInfoResponse>> getTeamRequestByCaptain(@AuthenticationPrincipal UserDetails details) {
+    public ResponseEntity<List<TeamRequestInfoResponse>> getTeamRequestByCaptain(@AuthenticationPrincipal UserDetails details,
+                                                                                 @RequestParam(required = false) Integer wKd,
+                                                                                 //@RequestParam(required = false) Integer wAdr,
+                                                                                 @RequestParam(required = false) Integer wHs,
+                                                                                 @RequestParam(required = false) Integer wWr,
+                                                                                 @RequestParam(required = false) Integer wTa,
+                                                                                 @RequestParam(required = false) Integer wTp,
+                                                                                 @RequestParam(required = false) Integer wHp) {
+        ArrayList<Integer> weights = new ArrayList<>();
+        weights.add(wKd);
+        weights.add(wHs);
+        weights.add(wWr);
+        weights.add(wTa);
+        weights.add(wTp);
+        weights.add(wHp);
         User user = userService.getCurrentUser(details);
-        List<TeamRequest> requests = teamRequestService.findTeamRequests(user.getTeam());
+        List<TeamRequest> requests = teamRequestService.findTeamRequestsRanking(user.getTeam(), weights);
         List<TeamRequestInfoResponse> dtos = new ArrayList<>();
         for (TeamRequest r : requests)
             dtos.add(mapper.toTeamRequestInfoResponse(r));

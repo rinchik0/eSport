@@ -34,4 +34,6 @@ public class TeamRequest {
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     private TeamRequestStatus status;
+
+    private LocalDateTime respondedDate;
 }

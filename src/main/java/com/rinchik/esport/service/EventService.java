@@ -5,6 +5,7 @@ import com.rinchik.esport.dto.event.EventCreatingRequest;
 import com.rinchik.esport.exception.*;
 import com.rinchik.esport.model.Event;
 import com.rinchik.esport.model.User;
+import com.rinchik.esport.model.enums.EventStatus;
 import com.rinchik.esport.model.enums.EventType;
 import com.rinchik.esport.repository.EventRepository;
 import lombok.RequiredArgsConstructor;
@@ -86,7 +87,12 @@ public class EventService {
                 dto.getMaxAmountOfParticipants() != null ? dto.getMaxAmountOfParticipants() : 100);
 
         newEvent.setOrganizer(userService.findUserById(organizerId));
-        newEvent.setTeam(teamService.findTeamById(teamId));
+        if (teamId == null)
+            newEvent.setTeam(null);
+        else
+            newEvent.setTeam(teamService.findTeamById(teamId));
+
+        newEvent.setStatus(EventStatus.AHEAD);
         newEvent.setParticipants(new ArrayList<>());
 
         return eventRepo.save(newEvent);

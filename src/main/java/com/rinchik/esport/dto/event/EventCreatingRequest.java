@@ -1,5 +1,6 @@
 package com.rinchik.esport.dto.event;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.rinchik.esport.model.enums.EventType;
 import jakarta.validation.constraints.Future;
 import jakarta.validation.constraints.NotBlank;
@@ -16,7 +17,10 @@ public class EventCreatingRequest {
     private String title;
 
     private String description;
+
+    @JsonProperty("max_amount_of_participants")
     private Integer maxAmountOfParticipants;
+
     private String prize;
 
     @NotNull(message = "Type of event can not be empty")

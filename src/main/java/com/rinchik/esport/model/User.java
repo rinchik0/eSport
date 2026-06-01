@@ -76,6 +76,7 @@ public class User {
     @OneToMany(mappedBy = "user", cascade = CascadeType.REMOVE)
     private List<TeamRequest> requests = new ArrayList<>();
 
-    @Column(nullable = false)
+    private String faceitPlayerId;
     private String faceitNickname;
+    private String steamId;
 }

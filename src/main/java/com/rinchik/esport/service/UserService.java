@@ -150,4 +150,17 @@ public class UserService {
     public User getCurrentUser(UserDetails details) {
         return findUserByUsername(details.getUsername());
     }
+
+    @Transactional
+    public void updateFaceit(User user, String nickname, String faceitId) {
+        user.setFaceitPlayerId(faceitId);
+        user.setFaceitNickname(nickname);
+        userRepo.save(user);
+    }
+
+    @Transactional
+    public void updateSteam(User user, String steamId) {
+        user.setSteamId(steamId);
+        userRepo.save(user);
+    }
 }
